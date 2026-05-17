@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a56a0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GeriAssess">
+<meta name="description" content="Comprehensive geriatric assessment tool">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>GeriAssess</title>
+<style>
+:root {
+  --blue: #1a56a0;
+  --blue-light: #e8f0fb;
+  --blue-mid: #2d6fc4;
+  --green: #0d7a4e;
+  --green-light: #e6f5ee;
+  --amber: #b45309;
+  --amber-light: #fef3c7;
+  --red: #b91c1c;
+  --red-light: #fee2e2;
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --nav-h: 60px;
+  --header-h: 56px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gray-100); color: var(--gray-900); font-size: 16px; min-height: 100vh; overscroll-behavior: none; }
+
+/* HEADER */
+.app-header { position: sticky; top: 0; z-index: 100; background: var(--blue); color: white; height: var(--header-h); display: flex; align-items: center; padding: 0 16px; gap: 10px; box-shadow: var(--shadow-md); }
+.app-header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+.app-header .patient-chip { font-size: 12px; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 10px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-header .menu-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 4px; }
+
+/* HOME SCREEN GRID */
+.home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 12px; }
+.home-tile { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 14px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none; text-align: left; width: 100%; }
+.home-tile:active { box-shadow: none; border-color: var(--blue); }
+.home-tile-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.home-tile-icon svg { width: 22px; height: 22px; stroke-width: 1.8; }
+.home-tile-name { font-size: 14px; font-weight: 600; color: var(--gray-900); line-height: 1.2; }
+.home-tile-desc { font-size: 11px; color: var(--gray-500); line-height: 1.4; }
+.home-tile-score { font-size: 12px; font-weight: 700; margin-top: auto; padding-top: 6px; }
+.home-tile-score.ok { color: var(--green); }
+.home-tile-score.warn { color: var(--amber); }
+.home-tile-score.bad { color: var(--red); }
+.home-tile-score.pending { color: var(--gray-400); }
+.home-tile.done { border-color: var(--gray-200); }
+.home-tile.done-ok { border-color: #86efac; }
+.home-tile.done-warn { border-color: #fcd34d; }
+.home-tile.done-bad { border-color: #fca5a5; }
+
+/* BACK BUTTON */
+.back-btn { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 14px; font-weight: 500; padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+.back-btn svg { width: 18px; height: 18px; stroke-width: 2; }
+
+/* MAIN CONTENT — no bottom nav padding needed */
+.main { padding: 0 0 32px; min-height: calc(100vh - var(--header-h)); }
+.screen { display: none; }
+.screen.active { display: block; }
+.screen-inner { padding: 12px 12px 24px; }
+
+/* CARDS */
+.card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
+.card-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--gray-100); }
+.card-title { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+.card-desc { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+.card-body { padding: 14px 16px; }
+
+/* FORM ELEMENTS */
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 5px; display: block; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+input[type=number], input[type=text], select {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-300); border-radius: var(--radius-sm);
+  font-size: 15px; color: var(--gray-900); background: white; appearance: none; -webkit-appearance: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus { outline: none; border-color: var(--blue); }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c757d' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+/* OPTION BUTTONS */
+.options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.opt-btn { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1.5px solid var(--gray-300); border-radius: var(--radius-sm); background: white; text-align: left; font-size: 14px; color: var(--gray-800); cursor: pointer; transition: all .12s; width: 100%; }
+.opt-btn:active { transform: scale(0.98); }
+.opt-btn.selected { border-color: var(--blue); background: var(--blue-light); color: var(--blue); font-weight: 500; }
+.opt-btn.selected.danger { border-color: var(--red); background: var(--red-light); color: var(--red); }
+.opt-btn .radio-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--gray-400); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.opt-btn.selected .radio-dot { border-color: var(--blue); background: var(--blue); }
+.opt-btn.selected.danger .radio-dot { border-color: var(--red); background: var(--red); }
+.opt-btn.selected .radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; }
+.opt-row { flex-direction: row; }
+.opt-row .opt-btn { flex: 1; justify-content: center; padding: 10px 6px; font-size: 13px; }
+
+/* ACCORDION — native details/summary */
+.acc-details { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
+.acc-summary { display: flex; align-items: center; padding: 14px 16px; gap: 10px; min-height: 60px; width: 100%; list-style: none; cursor: pointer; }
+.acc-summary::-webkit-details-marker { display: none; }
+.acc-summary::marker { display: none; }
+.acc-summary:active { background: var(--gray-50); }
+.acc-title-wrap { flex: 1; min-width: 0; }
+.acc-title { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+.acc-desc { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+.acc-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.acc-score { font-size: 13px; font-weight: 700; color: var(--blue); min-width: 28px; text-align: right; }
+.acc-score.ok { color: var(--green); }
+.acc-score.warn { color: var(--amber); }
+.acc-score.bad { color: var(--red); }
+.acc-chevron { width: 20px; height: 20px; stroke: var(--gray-400); flex-shrink: 0; transition: transform .25s ease; }
+.acc-details[open] .acc-chevron { transform: rotate(180deg); }
+.acc-body-inner { padding: 14px 16px 16px; border-top: 1px solid var(--gray-100); }
+
+.section-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: white; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.section-hdr { display: flex; align-items: center; gap: 8px; margin: 16px 0 10px; }
+.section-hdr-title { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+.status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: auto; }
+.badge-pending { background: var(--gray-100); color: var(--gray-500); }
+.badge-pos { background: var(--red-light); color: var(--red); }
+.badge-neg { background: var(--green-light); color: var(--green); }
+
+/* RESULT CARDS */
+.result-card { border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 10px; }
+.result-card.ok { background: var(--green-light); border-left: 4px solid var(--green); }
+.result-card.warn { background: var(--amber-light); border-left: 4px solid var(--amber); }
+.result-card.bad { background: var(--red-light); border-left: 4px solid var(--red); }
+.result-card .r-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.result-card.ok .r-title { color: var(--green); }
+.result-card.warn .r-title { color: var(--amber); }
+.result-card.bad .r-title { color: var(--red); }
+.result-card .r-body { font-size: 13px; line-height: 1.5; }
+.result-card.ok .r-body { color: #065f3f; }
+.result-card.warn .r-body { color: #78350f; }
+.result-card.bad .r-body { color: #7f1d1d; }
+
+/* SCORE DISPLAY */
+.score-display { display: flex; align-items: center; gap: 14px; padding: 12px 0 4px; }
+.score-circle { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--gray-300); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.score-num { font-size: 24px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+.score-denom { font-size: 11px; color: var(--gray-500); }
+.score-label { font-size: 13px; color: var(--gray-600); }
+
+/* TIMER */
+.timer-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px 12px; background: var(--gray-50); border-radius: var(--radius-sm); }
+.timer-display { font-size: 22px; font-weight: 700; color: var(--gray-900); font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
+.timer-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+.timer-btn.start { background: var(--green); color: white; }
+.timer-btn.stop { background: var(--red); color: white; }
+.timer-btn.reset { background: var(--gray-200); color: var(--gray-700); }
+
+/* SUMMARY GRID */
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.sum-card { background: var(--gray-50); border-radius: var(--radius-sm); padding: 10px 12px; border: 1px solid var(--gray-200); }
+.sum-label { font-size: 10px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.sum-score { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+.sum-interp { font-size: 11px; color: var(--gray-600); margin-top: 1px; }
+.sum-card.ok { border-color: #86efac; background: var(--green-light); }
+.sum-card.warn { border-color: #fcd34d; background: var(--amber-light); }
+.sum-card.bad { border-color: #fca5a5; background: var(--red-light); }
+.sum-card.ok .sum-score { color: var(--green); }
+.sum-card.warn .sum-score { color: var(--amber); }
+.sum-card.bad .sum-score { color: var(--red); }
+
+/* INFO BOX */
+.info-box { background: var(--blue-light); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: #1e3a5f; margin-bottom: 12px; line-height: 1.6; }
+.warn-box { background: var(--amber-light); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: #78350f; margin-bottom: 12px; line-height: 1.6; border-left: 3px solid var(--amber); }
+
+/* INPUT WITH UNIT */
+.input-unit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.input-unit-row label { font-size: 13px; color: var(--gray-600); flex: 1; }
+.input-unit-row input { width: 80px; flex-shrink: 0; }
+.input-unit-row .unit { font-size: 13px; color: var(--gray-500); flex-shrink: 0; min-width: 24px; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+.data-table th { padding: 7px 8px; background: var(--gray-50); text-align: left; font-weight: 600; color: var(--gray-600); font-size: 11px; border-bottom: 1px solid var(--gray-200); }
+.data-table td { padding: 7px 8px; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); }
+.data-table tr.highlight td { background: var(--blue-light); color: var(--blue); font-weight: 600; }
+.data-table tr.cuthighlight td { background: var(--amber-light); color: var(--amber); font-weight: 600; }
+
+/* ACTION BUTTONS */
+.action-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; border: none; margin-bottom: 8px; transition: opacity .15s; }
+.action-btn:active { opacity: 0.85; }
+.action-btn.primary { background: var(--blue); color: white; }
+.action-btn.secondary { background: var(--gray-200); color: var(--gray-700); }
+.action-btn.success { background: var(--green); color: white; }
+
+/* DIVIDER */
+.divider { border: none; border-top: 1px solid var(--gray-200); margin: 12px 0; }
+
+/* COMPONENT GRID (frailty) */
+.comp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0; }
+.comp-item { text-align: center; padding: 8px 4px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); background: var(--gray-50); }
+.comp-item.pos { background: var(--red-light); border-color: #fca5a5; }
+.comp-item.neg { background: var(--green-light); border-color: #86efac; }
+.comp-item .ci-icon { font-size: 16px; }
+.comp-item .ci-lbl { font-size: 9px; color: var(--gray-500); margin-top: 2px; }
+.comp-item.pos .ci-lbl { color: var(--red); }
+.comp-item.neg .ci-lbl { color: var(--green); }
+
+/* TRIAL BOXES */
+.trial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.trial-box { background: var(--gray-50); border-radius: var(--radius-sm); padding: 10px 12px; border: 1px solid var(--gray-200); }
+.trial-box label { font-size: 11px; font-weight: 600; color: var(--gray-500); display: block; margin-bottom: 4px; }
+.trial-box input { font-size: 18px; font-weight: 700; width: 100%; border: 1px solid var(--gray-300); border-radius: 6px; padding: 6px 8px; background: white; color: var(--gray-900); }
+.trial-box .unit-lbl { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+
+/* TABS */
+.tab-bar { display: flex; background: var(--gray-100); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 14px; }
+.tab-item { flex: 1; text-align: center; padding: 7px 4px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--gray-600); cursor: pointer; transition: all .15s; }
+.tab-item.active { background: white; color: var(--blue); box-shadow: var(--shadow); font-weight: 600; }
+
+/* NOTE BOX */
+.note-box { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; font-family: monospace; white-space: pre-wrap; color: var(--gray-700); line-height: 1.6; margin-bottom: 10px; }
+
+/* INSTALL BANNER */
+.install-banner { background: var(--blue); color: white; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+.install-banner .ib-text { flex: 1; font-size: 13px; line-height: 1.4; }
+.install-banner .ib-btn { background: white; color: var(--blue); border: none; border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+.install-banner .ib-close { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer; padding: 0; flex-shrink: 0; }
+
+/* PHQ NOTE */
+.phq-scale { display: flex; gap: 4px; margin-bottom: 10px; }
+.phq-scale .ps-item { flex: 1; text-align: center; font-size: 10px; padding: 6px 2px; background: var(--gray-50); border-radius: 6px; border: 1px solid var(--gray-200); color: var(--gray-600); }
+.ps-item .ps-num { font-size: 15px; font-weight: 700; color: var(--gray-800); display: block; }
+
+/* GDS scale */
+.gds-opts { display: flex; gap: 6px; margin-bottom: 10px; }
+.gds-btn { flex: 1; padding: 9px 4px; border: 1.5px solid var(--gray-300); border-radius: var(--radius-sm); background: white; font-size: 13px; font-weight: 500; cursor: pointer; text-align: center; color: var(--gray-700); }
+.gds-btn.sel-yes { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+.gds-btn.sel-no { border-color: var(--gray-400); background: var(--gray-100); color: var(--gray-600); }
+
+/* MOCA grid */
+.moca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.moca-domain { background: var(--gray-50); border-radius: var(--radius-sm); padding: 10px 12px; border: 1px solid var(--gray-200); }
+.moca-domain label { font-size: 11px; font-weight: 600; color: var(--gray-500); display: block; margin-bottom: 5px; }
+.moca-domain select { font-size: 15px; width: 100%; border: 1px solid var(--gray-300); border-radius: 6px; padding: 6px 8px; background: white; color: var(--gray-900); }
+
+/* Grip table */
+.grip-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; }
+.grip-tbl th { padding: 6px 8px; background: var(--gray-50); font-size: 11px; font-weight: 600; color: var(--gray-600); border-bottom: 1px solid var(--gray-200); text-align: left; }
+.grip-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); }
+.grip-tbl tr.hi td { background: var(--amber-light); color: var(--amber); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <button class="back-btn" id="back-btn" onclick="goHome()" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </button>
+  <h1 id="app-title">GeriAssess</h1>
+  <div class="patient-chip" id="pt-chip">No patient</div>
+</header>
+
+<div id="install-banner" class="install-banner" style="display:none;margin:12px 12px 0">
+  <div class="ib-text"><strong>Install as app</strong><br>Add to home screen for offline use</div>
+  <button class="ib-btn" id="install-btn">Install</button>
+  <button class="ib-close" onclick="document.getElementById('install-banner').style.display='none'">✕</button>
+</div>
+
+<main class="main">
+
+<!-- HOME SCREEN -->
+<div id="screen-home" class="screen active">
+  <div class="home-grid">
+    <button class="home-tile" onclick="goScreen('patient')">
+      <div class="home-tile-icon" style="background:#e8f0fb"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56a0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="home-tile-name">Patient</div>
+      <div class="home-tile-desc">Demographics, BMI, weight</div>
+      <div class="home-tile-score pending" id="ht-patient">Tap to open</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('physical')">
+      <div class="home-tile-icon" style="background:#e6f5ee"><svg viewBox="0 0 24 24" fill="none" stroke="#0d7a4e"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="home-tile-name">Physical</div>
+      <div class="home-tile-desc">SPPB · TUG · Grip strength</div>
+      <div class="home-tile-score pending" id="ht-physical">Not scored</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('cognitive')">
+      <div class="home-tile-icon" style="background:#fef3c7"><svg viewBox="0 0 24 24" fill="none" stroke="#b45309"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.16Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.16Z"/></svg></div>
+      <div class="home-tile-name">Cognitive</div>
+      <div class="home-tile-desc">Mini-Cog · MoCA · GDS · PHQ</div>
+      <div class="home-tile-score pending" id="ht-cognitive">Not scored</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('frailty')">
+      <div class="home-tile-icon" style="background:#fee2e2"><svg viewBox="0 0 24 24" fill="none" stroke="#b91c1c"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <div class="home-tile-name">Frailty</div>
+      <div class="home-tile-desc">Hopkins · Fried phenotype</div>
+      <div class="home-tile-score pending" id="ht-frailty">Not scored</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('adl')">
+      <div class="home-tile-icon" style="background:#f0fdf4"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="home-tile-name">Function</div>
+      <div class="home-tile-desc">Katz ADL · Lawton IADL</div>
+      <div class="home-tile-score pending" id="ht-adl">Not scored</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('nutrition')">
+      <div class="home-tile-icon" style="background:#fdf4ff"><svg viewBox="0 0 24 24" fill="none" stroke="#9333ea"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+      <div class="home-tile-name">Nutrition</div>
+      <div class="home-tile-desc">MNA-SF · 6 items</div>
+      <div class="home-tile-score pending" id="ht-nutrition">Not scored</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('beers')">
+      <div class="home-tile-icon" style="background:#fff0f0"><svg viewBox="0 0 24 24" fill="none" stroke="#dc2626"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+      <div class="home-tile-name">Beers</div>
+      <div class="home-tile-desc">2023 AGS Beers Criteria search</div>
+      <div class="home-tile-score pending" id="ht-beers">Medication check</div>
+    </button>
+    <button class="home-tile" onclick="goScreen('summary'); buildSummary()" style="grid-column:1/-1;flex-direction:row;align-items:center;padding:14px 16px">
+      <div class="home-tile-icon" style="background:#e8f0fb"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56a0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <div style="flex:1;margin-left:12px">
+        <div class="home-tile-name">Summary &amp; Clinical Note</div>
+        <div class="home-tile-desc">All scores · Narrative · Copy to clipboard</div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" style="width:20px;height:20px;stroke-width:2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+<div id="screen-patient" class="screen"><div class="screen-inner">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Patient demographics</div><div class="card-desc">Used to auto-adjust cutoffs throughout all assessments</div></div>
+    <div class="card-body">
+      <div class="field-group">
+        <label class="field-label">Age (years)</label>
+        <input type="number" id="pt-age" inputmode="numeric" min="18" max="120" placeholder="e.g. 78" onchange="updatePt()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Sex</label>
+        <select id="pt-sex" onchange="updatePt()">
+          <option value="">— select —</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+      </div>
+      <div class="field-row field-group">
+        <div>
+          <label class="field-label">Height (cm)</label>
+          <input type="number" id="pt-ht" inputmode="decimal" min="100" max="220" placeholder="e.g. 168" onchange="calcBMI()">
+        </div>
+        <div>
+          <label class="field-label">Weight now (kg)</label>
+          <input type="number" id="pt-wt" inputmode="decimal" step="0.1" placeholder="e.g. 70" onchange="calcBMI()">
+        </div>
+      </div>
+      <div class="field-row field-group">
+        <div>
+          <label class="field-label">BMI (auto)</label>
+          <input type="number" id="pt-bmi" inputmode="decimal" step="0.1" placeholder="auto or enter" onchange="updatePt()">
+        </div>
+        <div>
+          <label class="field-label">Weight 1 yr ago (kg)</label>
+          <input type="number" id="pt-wt0" inputmode="decimal" step="0.1" placeholder="e.g. 74" onchange="checkWtLoss()">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Education</label>
+        <select id="pt-edu" onchange="updatePt()">
+          <option value="12">≥12 years (no MoCA adjustment)</option>
+          <option value="less">&lt;12 years (+1 pt MoCA)</option>
+        </select>
+      </div>
+      <div id="pt-summary" class="result-card ok" style="display:none">
+        <div class="r-title" id="pt-sum-title"></div>
+        <div class="r-body" id="pt-sum-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SCREEN: PHYSICAL -->
+<div id="screen-physical" class="screen"><div class="screen-inner">
+
+  <!-- SPPB -->
+  <details class="acc-details" id="det-sppb" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="sppb">
+      <div class="acc-title-wrap">
+        <div class="acc-title">SPPB</div>
+        <div class="acc-desc">Short Physical Performance Battery · 0–12</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-sppb">—</span>
+        <svg class="acc-chevron" id="chev-sppb" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="section-hdr"><div class="section-num">1</div><div class="section-hdr-title">Balance</div><span class="status-badge badge-pending" id="sppb-bal-badge">—</span></div>
+      <div class="options">
+        <button class="opt-btn" onclick="selSPPB(this,'bal',0)"><div class="radio-dot"></div>Unable to hold side-by-side 10 s — 0 pts</button>
+        <button class="opt-btn" onclick="selSPPB(this,'bal',1)"><div class="radio-dot"></div>Side-by-side ≥10 s, not semi-tandem — 1 pt</button>
+        <button class="opt-btn" onclick="selSPPB(this,'bal',2)"><div class="radio-dot"></div>Semi-tandem ≥10 s, tandem &lt;3 s — 2 pts</button>
+        <button class="opt-btn" onclick="selSPPB(this,'bal',3)"><div class="radio-dot"></div>Tandem 3–9.99 s — 3 pts</button>
+        <button class="opt-btn" onclick="selSPPB(this,'bal',4)"><div class="radio-dot"></div>Tandem ≥10 s — 4 pts</button>
+      </div>
+      <div class="section-hdr"><div class="section-num">2</div><div class="section-hdr-title">4-meter gait speed <span id="gait-thresh" style="font-size:11px;color:var(--blue);font-weight:400"></span></div><span class="status-badge badge-pending" id="sppb-gait-badge">—</span></div>
+      <div class="timer-row">
+        <button class="timer-btn start" onclick="startTimer('gait')">▶ Start</button>
+        <div class="timer-display" id="gait-timer">0.00 s</div>
+        <button class="timer-btn stop" onclick="stopTimer('gait')">■ Stop</button>
+        <button class="timer-btn reset" onclick="resetTimer('gait')">↺</button>
+      </div>
+      <div class="input-unit-row">
+        <label>Or enter time manually</label>
+        <input type="number" id="gait-manual" inputmode="decimal" step="0.01" placeholder="0.00" oninput="scoreGait()">
+        <span class="unit">s</span>
+      </div>
+      <div class="options">
+        <button class="opt-btn" id="gait-opt0" onclick="selSPPB(this,'gait',0)"><div class="radio-dot"></div>Unable — 0</button>
+        <button class="opt-btn" id="gait-opt1" onclick="selSPPB(this,'gait',1)"><div class="radio-dot"></div>&gt;8.70 s — 1</button>
+        <button class="opt-btn" id="gait-opt2" onclick="selSPPB(this,'gait',2)"><div class="radio-dot"></div>6.21–8.70 s — 2</button>
+        <button class="opt-btn" id="gait-opt3" onclick="selSPPB(this,'gait',3)"><div class="radio-dot"></div>4.82–6.20 s — 3</button>
+        <button class="opt-btn" id="gait-opt4" onclick="selSPPB(this,'gait',4)"><div class="radio-dot"></div>≤4.82 s — 4</button>
+      </div>
+      <div class="section-hdr"><div class="section-num">3</div><div class="section-hdr-title">Five chair stands</div><span class="status-badge badge-pending" id="sppb-chair-badge">—</span></div>
+      <div class="timer-row">
+        <button class="timer-btn start" onclick="startTimer('chair')">▶ Start</button>
+        <div class="timer-display" id="chair-timer">0.00 s</div>
+        <button class="timer-btn stop" onclick="stopTimer('chair')">■ Stop</button>
+        <button class="timer-btn reset" onclick="resetTimer('chair')">↺</button>
+      </div>
+      <div class="options">
+        <button class="opt-btn" id="chair-opt0" onclick="selSPPB(this,'chair',0)"><div class="radio-dot"></div>Unable / &gt;60 s — 0</button>
+        <button class="opt-btn" id="chair-opt1" onclick="selSPPB(this,'chair',1)"><div class="radio-dot"></div>16.70–60 s — 1</button>
+        <button class="opt-btn" id="chair-opt2" onclick="selSPPB(this,'chair',2)"><div class="radio-dot"></div>13.70–16.69 s — 2</button>
+        <button class="opt-btn" id="chair-opt3" onclick="selSPPB(this,'chair',3)"><div class="radio-dot"></div>11.20–13.69 s — 3</button>
+        <button class="opt-btn" id="chair-opt4" onclick="selSPPB(this,'chair',4)"><div class="radio-dot"></div>≤11.19 s — 4</button>
+      </div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="sppb-circle"><span class="score-num" id="sppb-num">—</span><span class="score-denom">/12</span></div>
+        <div class="score-label" id="sppb-label">Select all 3 components</div>
+      </div>
+      <div id="sppb-result"></div>
+</details>
+
+  <!-- TUG -->
+  <details class="acc-details" id="det-tug" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="tug">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Timed Up and Go (TUG)</div>
+        <div class="acc-desc">Rise · walk 3 m · turn · return · sit. Normal &lt;12 s</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-tug">—</span>
+        <svg class="acc-chevron" id="chev-tug" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="info-box">Patient rises from standard chair, walks 3 meters, turns, walks back, sits. Time the full sequence.</div>
+      <div class="timer-row">
+        <button class="timer-btn start" onclick="startTimer('tug')">▶ Start</button>
+        <div class="timer-display" id="tug-timer">0.00 s</div>
+        <button class="timer-btn stop" onclick="stopTimer('tug')">■ Stop</button>
+        <button class="timer-btn reset" onclick="resetTimer('tug')">↺</button>
+      </div>
+      <div class="input-unit-row">
+        <label>Or enter time manually</label>
+        <input type="number" id="tug-manual" inputmode="decimal" step="0.1" placeholder="0.0" oninput="scoreTUG()">
+        <span class="unit">s</span>
+      </div>
+      <div id="tug-result"></div>
+</details>
+
+  <!-- GRIP STRENGTH -->
+  <details class="acc-details" id="det-grip" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="grip">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Grip strength</div>
+        <div class="acc-desc">Up to 3 trials each hand · Best value used for cutoffs</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-grip">—</span>
+        <svg class="acc-chevron" id="chev-grip" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="showGripTab('dom',this)">Dominant</div>
+        <div class="tab-item" onclick="showGripTab('non',this)">Non-dominant</div>
+        <div class="tab-item" onclick="showGripTab('sum',this)">Summary</div>
+      </div>
+      <div id="grip-dom">
+        <div class="trial-grid">
+          <div class="trial-box"><label>Trial 1</label><input type="number" id="dom1" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box"><label>Trial 2</label><input type="number" id="dom2" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box"><label>Trial 3</label><input type="number" id="dom3" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box" style="background:var(--blue-light);border-color:#93c5fd"><label>Best</label><div id="dom-best" style="font-size:20px;font-weight:700;color:var(--blue);padding:4px 0">—</div><div class="unit-lbl">kg</div></div>
+        </div>
+      </div>
+      <div id="grip-non" style="display:none">
+        <div class="trial-grid">
+          <div class="trial-box"><label>Trial 1</label><input type="number" id="non1" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box"><label>Trial 2</label><input type="number" id="non2" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box"><label>Trial 3</label><input type="number" id="non3" inputmode="decimal" step="0.1" placeholder="—" oninput="calcGrip()"><div class="unit-lbl">kg</div></div>
+          <div class="trial-box" style="background:var(--blue-light);border-color:#93c5fd"><label>Best</label><div id="non-best" style="font-size:20px;font-weight:700;color:var(--blue);padding:4px 0">—</div><div class="unit-lbl">kg</div></div>
+        </div>
+      </div>
+      <div id="grip-sum" style="display:none">
+        <div class="summary-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+          <div class="sum-card"><div class="sum-label">Dom. best</div><div class="sum-score" id="gs-dom-sum">—</div><div class="sum-interp">kg</div></div>
+          <div class="sum-card"><div class="sum-label">Non-dom. best</div><div class="sum-score" id="gs-non-sum">—</div><div class="sum-interp">kg</div></div>
+          <div class="sum-card"><div class="sum-label">Overall best</div><div class="sum-score" id="gs-overall-sum">—</div><div class="sum-interp">kg</div></div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div id="grip-cutoff-info" class="info-box" style="font-size:12px">Enter sex and BMI in Patient tab to see frailty cutoffs.</div>
+      <div id="grip-result"></div>
+      <details style="margin-top:10px">
+        <summary style="font-size:12px;font-weight:600;color:var(--gray-600);cursor:pointer;padding:4px 0">Fried cutoff reference table</summary>
+        <table class="grip-tbl" style="margin-top:8px" id="grip-tbl">
+          <thead><tr><th>Sex</th><th>BMI</th><th>Cutoff (kg)</th></tr></thead>
+          <tbody id="grip-tbl-body"></tbody>
+        </table>
+      </details>
+      <details style="margin-top:6px">
+        <summary style="font-size:12px;font-weight:600;color:var(--gray-600);cursor:pointer;padding:4px 0">Age-group normative reference</summary>
+        <table class="grip-tbl" style="margin-top:8px">
+          <thead><tr><th>Age</th><th>Males kg</th><th>Females kg</th></tr></thead>
+          <tbody id="norm-tbl-body"></tbody>
+        </table>
+      </details>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SCREEN: COGNITIVE -->
+<div id="screen-cognitive" class="screen"><div class="screen-inner">
+
+  <!-- MINI-COG -->
+  <details class="acc-details" id="det-minicog" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="minicog">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Mini-Cog</div>
+        <div class="acc-desc">3-word recall + clock drawing · 0–5 · ≤2 = positive screen</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-minicog">—</span>
+        <svg class="acc-chevron" id="chev-minicog" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="info-box">Give 3 unrelated words to remember. Proceed to clock drawing. Then ask for recall.</div>
+      <div class="field-group">
+        <label class="field-label">Words recalled (0–3)</label>
+        <div class="options">
+          <button class="opt-btn" onclick="selMC(this,'recall',0)"><div class="radio-dot"></div>0 words recalled — 0 pts</button>
+          <button class="opt-btn" onclick="selMC(this,'recall',1)"><div class="radio-dot"></div>1 word recalled — 1 pt</button>
+          <button class="opt-btn" onclick="selMC(this,'recall',2)"><div class="radio-dot"></div>2 words recalled — 2 pts</button>
+          <button class="opt-btn" onclick="selMC(this,'recall',3)"><div class="radio-dot"></div>3 words recalled — 3 pts</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Clock Drawing Test — ask patient to draw clock showing 11:10</label>
+        <div class="options">
+          <button class="opt-btn" onclick="selMC(this,'clock',0)"><div class="radio-dot"></div>Abnormal (wrong time or placement) — 0 pts</button>
+          <button class="opt-btn" onclick="selMC(this,'clock',2)"><div class="radio-dot"></div>Normal (correct time and placement) — 2 pts</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="mc-circle"><span class="score-num" id="mc-num">—</span><span class="score-denom">/5</span></div>
+        <div class="score-label" id="mc-label">Select both components</div>
+      </div>
+      <div id="mc-result"></div>
+</details>
+
+  <!-- MOCA -->
+  <details class="acc-details" id="det-moca" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="moca">
+      <div class="acc-title-wrap">
+        <div class="acc-title">MoCA</div>
+        <div class="acc-desc">Montreal Cognitive Assessment · 0–30 · &lt;26 = impairment</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-moca">—</span>
+        <svg class="acc-chevron" id="chev-moca" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div id="moca-edu-note" class="info-box" style="font-size:12px">Education adjustment: <strong id="moca-edu-adj">auto-pulled from Patient tab</strong></div>
+      <div class="moca-grid">
+        <div class="moca-domain"><label>Visuospatial/Exec (0–5)</label><select id="mv" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="moca-domain"><label>Naming (0–3)</label><select id="mn" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="moca-domain"><label>Attention (0–6)</label><select id="ma" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div class="moca-domain"><label>Language (0–3)</label><select id="ml" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="moca-domain"><label>Abstraction (0–2)</label><select id="mab" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option></select></div>
+        <div class="moca-domain"><label>Delayed recall (0–5)</label><select id="mr" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="moca-domain"><label>Orientation (0–6)</label><select id="mo" onchange="calcMoca()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div class="moca-domain"><label>Edu adj. <span id="edu-auto-lbl" style="color:var(--blue)">(auto)</span></label><select id="medu" onchange="calcMoca()"><option value="0">≥12 yrs</option><option value="1">&lt;12 yrs +1</option></select></div>
+      </div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="moca-circle"><span class="score-num" id="moca-num">—</span><span class="score-denom">/30</span></div>
+        <div class="score-label" id="moca-label">Enter domain scores above</div>
+      </div>
+      <div id="moca-result"></div>
+</details>
+
+  <!-- GDS-15 -->
+  <details class="acc-details" id="det-gds" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="gds">
+      <div class="acc-title-wrap">
+        <div class="acc-title">GDS-15</div>
+        <div class="acc-desc">Geriatric Depression Scale short form · 0–15 · ≥5 = depression probable</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-gds">—</span>
+        <svg class="acc-chevron" id="chev-gds" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div id="gds-questions"></div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="gds-circle"><span class="score-num" id="gds-num">—</span><span class="score-denom">/15</span></div>
+        <div class="score-label" id="gds-label">Answer all 15 questions</div>
+      </div>
+      <div id="gds-result"></div>
+</details>
+
+  <!-- PHQ -->
+  <details class="acc-details" id="det-phq" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="phq">
+      <div class="acc-title-wrap">
+        <div class="acc-title">PHQ-2 / PHQ-9</div>
+        <div class="acc-desc">Depression screening and severity</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-phq">—</span>
+        <svg class="acc-chevron" id="chev-phq" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="tab-bar" id="phq-tab-bar">
+        <div class="tab-item active" onclick="showPHQTab('p2',this)">PHQ-2</div>
+        <div class="tab-item" onclick="showPHQTab('p9',this)">PHQ-9</div>
+      </div>
+      <div id="phq2-panel">
+        <div class="phq-scale">
+          <div class="ps-item"><span class="ps-num">0</span>Not at all</div>
+          <div class="ps-item"><span class="ps-num">1</span>Several days</div>
+          <div class="ps-item"><span class="ps-num">2</span>More than half</div>
+          <div class="ps-item"><span class="ps-num">3</span>Nearly every day</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">1. Little interest or pleasure in doing things</label>
+          <div class="options opt-row">
+            <button class="opt-btn" onclick="selP2(this,0,0)"><div class="radio-dot"></div>0</button>
+            <button class="opt-btn" onclick="selP2(this,0,1)"><div class="radio-dot"></div>1</button>
+            <button class="opt-btn" onclick="selP2(this,0,2)"><div class="radio-dot"></div>2</button>
+            <button class="opt-btn" onclick="selP2(this,0,3)"><div class="radio-dot"></div>3</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">2. Feeling down, depressed, or hopeless</label>
+          <div class="options opt-row">
+            <button class="opt-btn" onclick="selP2(this,1,0)"><div class="radio-dot"></div>0</button>
+            <button class="opt-btn" onclick="selP2(this,1,1)"><div class="radio-dot"></div>1</button>
+            <button class="opt-btn" onclick="selP2(this,1,2)"><div class="radio-dot"></div>2</button>
+            <button class="opt-btn" onclick="selP2(this,1,3)"><div class="radio-dot"></div>3</button>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="score-display">
+          <div class="score-circle" id="p2-circle"><span class="score-num" id="p2-num">—</span><span class="score-denom">/6</span></div>
+          <div class="score-label" id="p2-label">Select responses above</div>
+        </div>
+        <div id="p2-result"></div>
+        <div id="p2-goto" style="display:none;margin-top:10px">
+          <button class="action-btn primary" onclick="showPHQTabByName('p9')">Proceed to PHQ-9 →</button>
+        </div>
+      </div>
+      <div id="phq9-panel" style="display:none">
+        <div class="phq-scale">
+          <div class="ps-item"><span class="ps-num">0</span>Not at all</div>
+          <div class="ps-item"><span class="ps-num">1</span>Several days</div>
+          <div class="ps-item"><span class="ps-num">2</span>More than half</div>
+          <div class="ps-item"><span class="ps-num">3</span>Nearly every day</div>
+        </div>
+        <div id="phq9-questions"></div>
+        <hr class="divider">
+        <div class="score-display">
+          <div class="score-circle" id="p9-circle"><span class="score-num" id="p9-num">—</span><span class="score-denom">/27</span></div>
+          <div class="score-label" id="p9-label">Answer all 9 questions</div>
+        </div>
+        <div id="p9-result"></div>
+      </div>
+      </div>
+    </div>
+</details>
+  <!-- CAM -->
+  <details class="acc-details" id="det-cam" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="cam">
+      <div class="acc-title-wrap">
+        <div class="acc-title">CAM — Confusion Assessment Method</div>
+        <div class="acc-desc">Delirium screen · Positive = 1+2 AND (3 or 4)</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-cam">—</span>
+        <svg class="acc-chevron" id="chev-cam" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </summary>
+    <div class="acc-body-inner">
+      <div class="info-box" style="font-size:12px">CAM is <strong>positive (delirium)</strong> when Features 1 AND 2 are present, PLUS either Feature 3 OR 4.</div>
+
+      <div class="section-hdr" style="margin-top:0">
+        <div class="section-num">1</div>
+        <div class="section-hdr-title">Acute onset AND fluctuating course</div>
+        <span class="status-badge badge-pending" id="cam-1-badge">—</span>
+      </div>
+      <div class="field-label" style="margin-bottom:8px">Evidence of acute change in mental status from baseline? Does behaviour fluctuate during the day?</div>
+      <div class="options opt-row">
+        <button class="opt-btn" onclick="selCAM(this,0,0)"><div class="radio-dot"></div>No</button>
+        <button class="opt-btn" onclick="selCAM(this,0,1)"><div class="radio-dot"></div>Yes</button>
+      </div>
+
+      <div class="section-hdr">
+        <div class="section-num">2</div>
+        <div class="section-hdr-title">Inattention</div>
+        <span class="status-badge badge-pending" id="cam-2-badge">—</span>
+      </div>
+      <div class="field-label" style="margin-bottom:8px">Difficulty focusing attention? Easily distracted or trouble keeping track of conversation?</div>
+      <div class="options opt-row">
+        <button class="opt-btn" onclick="selCAM(this,1,0)"><div class="radio-dot"></div>No</button>
+        <button class="opt-btn" onclick="selCAM(this,1,1)"><div class="radio-dot"></div>Yes</button>
+      </div>
+
+      <div class="section-hdr">
+        <div class="section-num">3</div>
+        <div class="section-hdr-title">Disorganized thinking</div>
+        <span class="status-badge badge-pending" id="cam-3-badge">—</span>
+      </div>
+      <div class="field-label" style="margin-bottom:8px">Disorganized or incoherent? Rambling conversation, unclear/illogical flow of ideas?</div>
+      <div class="options opt-row">
+        <button class="opt-btn" onclick="selCAM(this,2,0)"><div class="radio-dot"></div>No</button>
+        <button class="opt-btn" onclick="selCAM(this,2,1)"><div class="radio-dot"></div>Yes</button>
+      </div>
+
+      <div class="section-hdr">
+        <div class="section-num">4</div>
+        <div class="section-hdr-title">Altered level of consciousness</div>
+        <span class="status-badge badge-pending" id="cam-4-badge">—</span>
+      </div>
+      <div class="options">
+        <button class="opt-btn" onclick="selCAM(this,3,0)"><div class="radio-dot"></div>Alert — normal</button>
+        <button class="opt-btn" onclick="selCAM(this,3,1)"><div class="radio-dot"></div>Vigilant — hyperalert</button>
+        <button class="opt-btn" onclick="selCAM(this,3,1)"><div class="radio-dot"></div>Lethargic — drowsy, easily aroused</button>
+        <button class="opt-btn" onclick="selCAM(this,3,1)"><div class="radio-dot"></div>Stupor — difficult to arouse</button>
+        <button class="opt-btn" onclick="selCAM(this,3,1)"><div class="radio-dot"></div>Coma — unarousable</button>
+      </div>
+
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="cam-circle"><span class="score-num" id="cam-num">—</span><span class="score-denom"></span></div>
+        <div class="score-label" id="cam-label">Answer all 4 features</div>
+      </div>
+      <div id="cam-result"></div>
+    </div>
+  </details>
+
+  <!-- MMSE -->
+  <details class="acc-details" id="det-mmse" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="mmse">
+      <div class="acc-title-wrap">
+        <div class="acc-title">MMSE</div>
+        <div class="acc-desc">Mini-Mental State Exam · 0–30 · &lt;24 = impairment</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-mmse">—</span>
+        <svg class="acc-chevron" id="chev-mmse" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </summary>
+    <div class="acc-body-inner">
+      <div class="info-box" style="font-size:12px">Score 24–30: normal · 18–23: mild impairment · 12–17: moderate · &lt;12: severe.</div>
+      <div class="moca-grid">
+        <div class="moca-domain"><label>Orientation — Time (0–5)</label><select id="mmse-ot" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="moca-domain"><label>Orientation — Place (0–5)</label><select id="mmse-op" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="moca-domain"><label>Registration (0–3)</label><select id="mmse-reg" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="moca-domain"><label>Attention/Calc (0–5)</label><select id="mmse-att" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="moca-domain"><label>Recall (0–3)</label><select id="mmse-rec" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="moca-domain"><label>Naming (0–2)</label><select id="mmse-nam" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option></select></div>
+        <div class="moca-domain"><label>Repetition (0–1)</label><select id="mmse-rep" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option></select></div>
+        <div class="moca-domain"><label>3-step command (0–3)</label><select id="mmse-cmd" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="moca-domain"><label>Reading (0–1)</label><select id="mmse-read" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option></select></div>
+        <div class="moca-domain"><label>Writing (0–1)</label><select id="mmse-writ" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option></select></div>
+        <div class="moca-domain"><label>Drawing/Copy (0–1)</label><select id="mmse-draw" onchange="calcMMSE()"><option value="">—</option><option>0</option><option>1</option></select></div>
+      </div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="mmse-circle"><span class="score-num" id="mmse-num">—</span><span class="score-denom">/30</span></div>
+        <div class="score-label" id="mmse-label">Enter domain scores above</div>
+      </div>
+      <div id="mmse-result"></div>
+    </div>
+  </details>
+
+
+</div>
+
+<!-- SCREEN: FRAILTY -->
+<div id="screen-frailty" class="screen"><div class="screen-inner">
+
+  <details class="acc-details" id="det-frailty" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="frailty">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Hopkins Frailty — Fried Phenotype</div>
+        <div class="acc-desc">5 measured criteria · 0=robust · 1–2=pre-frail · ≥3=frail</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-frailty">—</span>
+        <svg class="acc-chevron" id="chev-frailty" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+
+      <div class="section-hdr"><div class="section-num">1</div><div class="section-hdr-title">Weight loss</div><span class="status-badge badge-pending" id="fr-wl-badge">—</span></div>
+      <div class="info-box" style="font-size:12px">Positive: ≥4.5 kg or ≥5% BW unintentionally in past 12 months<span id="wl-auto-msg"></span></div>
+      <div class="options opt-row">
+        <button class="opt-btn" id="fr-wl-no" onclick="selFr(this,'wl',0,'no')"><div class="radio-dot"></div>No</button>
+        <button class="opt-btn" id="fr-wl-yes" onclick="selFr(this,'wl',1,'yes')"><div class="radio-dot"></div>Yes (+1)</button>
+      </div>
+
+      <div class="section-hdr"><div class="section-num">2</div><div class="section-hdr-title">Exhaustion — CES-D</div><span class="status-badge badge-pending" id="fr-ex-badge">—</span></div>
+      <div class="field-group">
+        <label class="field-label">A. "Everything I did was an effort" — past week</label>
+        <div class="options">
+          <button class="opt-btn" onclick="selCES(this,0,0)"><div class="radio-dot"></div>Rarely / none (&lt;1 day)</button>
+          <button class="opt-btn" onclick="selCES(this,0,1)"><div class="radio-dot"></div>Some / little (1–2 days)</button>
+          <button class="opt-btn" onclick="selCES(this,0,2)"><div class="radio-dot"></div>Moderate (3–4 days) ✓ positive</button>
+          <button class="opt-btn" onclick="selCES(this,0,3)"><div class="radio-dot"></div>Most / all (5–7 days) ✓ positive</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">B. "I could not get going" — past week</label>
+        <div class="options">
+          <button class="opt-btn" onclick="selCES(this,1,0)"><div class="radio-dot"></div>Rarely / none (&lt;1 day)</button>
+          <button class="opt-btn" onclick="selCES(this,1,1)"><div class="radio-dot"></div>Some / little (1–2 days)</button>
+          <button class="opt-btn" onclick="selCES(this,1,2)"><div class="radio-dot"></div>Moderate (3–4 days) ✓ positive</button>
+          <button class="opt-btn" onclick="selCES(this,1,3)"><div class="radio-dot"></div>Most / all (5–7 days) ✓ positive</button>
+        </div>
+      </div>
+
+      <div class="section-hdr"><div class="section-num">3</div><div class="section-hdr-title">Weakness — grip <span id="fr-grip-auto-lbl" style="font-size:11px;color:var(--blue);font-weight:400"></span></div><span class="status-badge badge-pending" id="fr-grip-badge">—</span></div>
+      <div class="info-box" id="fr-grip-info" style="font-size:12px">Enter sex + BMI in Patient tab for cutoff, and grip strength in Physical tab.</div>
+      <div class="options opt-row">
+        <button class="opt-btn" id="fr-grip-no" onclick="selFr(this,'grip',0,'no')"><div class="radio-dot"></div>Above cutoff</button>
+        <button class="opt-btn" id="fr-grip-yes" onclick="selFr(this,'grip',1,'yes')"><div class="radio-dot"></div>At/below cutoff (+1)</button>
+      </div>
+
+      <div class="section-hdr"><div class="section-num">4</div><div class="section-hdr-title">Slowness — gait <span id="fr-slow-auto-lbl" style="font-size:11px;color:var(--blue);font-weight:400"></span></div><span class="status-badge badge-pending" id="fr-slow-badge">—</span></div>
+      <div class="info-box" id="fr-slow-info" style="font-size:12px">Enter sex + height in Patient tab for cutoff. Auto-pulled from SPPB/TUG if completed.</div>
+      <div class="options opt-row">
+        <button class="opt-btn" id="fr-slow-no" onclick="selFr(this,'slow',0,'no')"><div class="radio-dot"></div>Normal speed</button>
+        <button class="opt-btn" id="fr-slow-yes" onclick="selFr(this,'slow',1,'yes')"><div class="radio-dot"></div>Slow gait (+1)</button>
+      </div>
+
+      <div class="section-hdr"><div class="section-num">5</div><div class="section-hdr-title">Low physical activity</div><span class="status-badge badge-pending" id="fr-pa-badge">—</span></div>
+      <div class="info-box" style="font-size:12px">Men &lt;383 kcal/wk · Women &lt;270 kcal/wk (Minnesota LTPA). Or use clinical estimate.</div>
+      <div class="input-unit-row">
+        <label>Measured kcal/week (if available)</label>
+        <input type="number" id="fr-kcal" inputmode="numeric" placeholder="—" oninput="scorePA()">
+        <span class="unit">kcal</span>
+      </div>
+      <div class="options">
+        <button class="opt-btn" id="fr-pa-no" onclick="selFr(this,'pa',0,'no')"><div class="radio-dot"></div>Active — walks regularly, exercises or housework most days</button>
+        <button class="opt-btn" id="fr-pa-yes" onclick="selFr(this,'pa',1,'yes')"><div class="radio-dot"></div>Sedentary — mostly sitting, minimal planned activity (+1)</button>
+      </div>
+
+      <hr class="divider">
+      <div class="comp-grid" id="fr-comp-grid">
+        <div class="comp-item" id="cg-wl"><div class="ci-icon">—</div><div class="ci-lbl">Wt loss</div></div>
+        <div class="comp-item" id="cg-ex"><div class="ci-icon">—</div><div class="ci-lbl">Exhaust.</div></div>
+        <div class="comp-item" id="cg-grip"><div class="ci-icon">—</div><div class="ci-lbl">Weakness</div></div>
+        <div class="comp-item" id="cg-slow"><div class="ci-icon">—</div><div class="ci-lbl">Slowness</div></div>
+        <div class="comp-item" id="cg-pa"><div class="ci-icon">—</div><div class="ci-lbl">Low PA</div></div>
+      </div>
+      <div class="score-display">
+        <div class="score-circle" id="fr-circle"><span class="score-num" id="fr-num">—</span><span class="score-denom">/5</span></div>
+        <div class="score-label" id="fr-label">Complete all 5 components</div>
+      </div>
+      <div id="fr-result"></div>
+      </div>
+</details>
+
+</div>
+
+<!-- SCREEN: ADL / IADL -->
+<div id="screen-adl" class="screen"><div class="screen-inner">
+
+  <!-- KATZ ADL -->
+  <details class="acc-details" id="det-katz" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="katz">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Katz Index of ADLs</div>
+        <div class="acc-desc">Basic Activities of Daily Living · 6 items · Score 0–6</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-katz">—</span>
+        <svg class="acc-chevron" id="chev-katz" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="info-box" style="font-size:12px">Score <strong>1</strong> = independent (without supervision, direction, or personal assistance). Score <strong>0</strong> = dependent. Based on actual performance, not ability.</div>
+      <div id="katz-items"></div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="katz-circle"><span class="score-num" id="katz-num">—</span><span class="score-denom">/6</span></div>
+        <div class="score-label" id="katz-label">Score all 6 items</div>
+      </div>
+      <div id="katz-result"></div>
+</details>
+
+  <!-- LAWTON IADL -->
+  <details class="acc-details" id="det-lawton" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="lawton">
+      <div class="acc-title-wrap">
+        <div class="acc-title">Lawton IADL Scale</div>
+        <div class="acc-desc">Instrumental Activities of Daily Living · 8 items · Higher = more independent</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-lawton">—</span>
+        <svg class="acc-chevron" id="chev-lawton" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+      <div class="info-box" style="font-size:12px">Each item scored 0 or 1 based on highest level of function. Maximum score = 8 (fully independent). Assess based on current performance, not pre-morbid status.</div>
+      <div id="lawton-items"></div>
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="lawton-circle"><span class="score-num" id="lawton-num">—</span><span class="score-denom">/8</span></div>
+        <div class="score-label" id="lawton-label">Score all 8 items</div>
+      </div>
+      <div id="lawton-result"></div>
+      </div>
+</details>
+
+</div>
+
+<!-- SCREEN: NUTRITION -->
+<div id="screen-nutrition" class="screen"><div class="screen-inner">
+
+  <details class="acc-details" id="det-mna" ontoggle="oneOpen(this)">
+    <summary class="acc-summary" data-acc="mna">
+      <div class="acc-title-wrap">
+        <div class="acc-title">MNA-SF — Mini Nutritional Assessment</div>
+        <div class="acc-desc">Short Form · 6 items · Score 0–14 · Validated for adults ≥65</div>
+      </div>
+      <div class="acc-right">
+        <span class="acc-score" id="acc-mna">—</span>
+        <svg class="acc-chevron" id="chev-mna" viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+
+      
+
+      <div class="info-box" style="font-size:12px">Score 12–14: normal nutritional status · Score 8–11: at risk of malnutrition · Score 0–7: malnourished. BMI substituted by calf circumference if BMI unavailable.</div>
+
+      <!-- A: Food intake decline -->
+      <div class="section-hdr" style="margin-top:0">
+        <div class="section-num">A</div>
+        <div class="section-hdr-title">Food intake decline</div>
+        <span class="status-badge badge-pending" id="mna-a-badge">—</span>
+      </div>
+      <div class="field-label">Has food intake declined over the past 3 months due to loss of appetite, digestive problems, or chewing/swallowing difficulties?</div>
+      <div class="options" style="margin-top:8px">
+        <button class="opt-btn" onclick="selMNA(this,'a',0)"><div class="radio-dot"></div>Severe decrease in food intake — 0</button>
+        <button class="opt-btn" onclick="selMNA(this,'a',1)"><div class="radio-dot"></div>Moderate decrease in food intake — 1</button>
+        <button class="opt-btn" onclick="selMNA(this,'a',2)"><div class="radio-dot"></div>No decrease in food intake — 2</button>
+      </div>
+
+      <!-- B: Weight loss -->
+      <div class="section-hdr">
+        <div class="section-num">B</div>
+        <div class="section-hdr-title">Weight loss in past 3 months</div>
+        <span class="status-badge badge-pending" id="mna-b-badge">—</span>
+      </div>
+      <div id="mna-b-auto" class="info-box" style="font-size:12px;display:none"></div>
+      <div class="options">
+        <button class="opt-btn" onclick="selMNA(this,'b',0)"><div class="radio-dot"></div>Weight loss &gt;3 kg (6.6 lbs) — 0</button>
+        <button class="opt-btn" onclick="selMNA(this,'b',1)"><div class="radio-dot"></div>Does not know — 1</button>
+        <button class="opt-btn" onclick="selMNA(this,'b',2)"><div class="radio-dot"></div>Weight loss 1–3 kg — 2</button>
+        <button class="opt-btn" onclick="selMNA(this,'b',3)"><div class="radio-dot"></div>No weight loss — 3</button>
+      </div>
+
+      <!-- C: Mobility -->
+      <div class="section-hdr">
+        <div class="section-num">C</div>
+        <div class="section-hdr-title">Mobility</div>
+        <span class="status-badge badge-pending" id="mna-c-badge">—</span>
+      </div>
+      <div class="options">
+        <button class="opt-btn" onclick="selMNA(this,'c',0)"><div class="radio-dot"></div>Bed or chair bound — 0</button>
+        <button class="opt-btn" onclick="selMNA(this,'c',1)"><div class="radio-dot"></div>Able to get out of bed/chair but does not go out — 1</button>
+        <button class="opt-btn" onclick="selMNA(this,'c',2)"><div class="radio-dot"></div>Goes out — 2</button>
+      </div>
+
+      <!-- D: Acute disease / psychological stress -->
+      <div class="section-hdr">
+        <div class="section-num">D</div>
+        <div class="section-hdr-title">Acute disease or psychological stress</div>
+        <span class="status-badge badge-pending" id="mna-d-badge">—</span>
+      </div>
+      <div class="field-label">Suffered psychological stress or acute disease in the past 3 months?</div>
+      <div class="options" style="margin-top:8px">
+        <button class="opt-btn" onclick="selMNA(this,'d',0)"><div class="radio-dot"></div>Yes — 0</button>
+        <button class="opt-btn" onclick="selMNA(this,'d',2)"><div class="radio-dot"></div>No — 2</button>
+      </div>
+
+      <!-- E: Neuropsychological problems -->
+      <div class="section-hdr">
+        <div class="section-num">E</div>
+        <div class="section-hdr-title">Neuropsychological problems</div>
+        <span class="status-badge badge-pending" id="mna-e-badge">—</span>
+      </div>
+      <div class="options">
+        <button class="opt-btn" onclick="selMNA(this,'e',0)"><div class="radio-dot"></div>Severe dementia or depression — 0</button>
+        <button class="opt-btn" onclick="selMNA(this,'e',1)"><div class="radio-dot"></div>Mild dementia — 1</button>
+        <button class="opt-btn" onclick="selMNA(this,'e',2)"><div class="radio-dot"></div>No neuropsychological problems — 2</button>
+      </div>
+
+      <!-- F1: BMI -->
+      <div class="section-hdr">
+        <div class="section-num">F</div>
+        <div class="section-hdr-title">BMI or calf circumference</div>
+        <span class="status-badge badge-pending" id="mna-f-badge">—</span>
+      </div>
+      <div class="info-box" style="font-size:12px">Use BMI if available (auto-filled from Patient tab). If BMI cannot be obtained, use calf circumference (CC) instead.</div>
+      <div id="mna-f-auto" class="info-box" style="font-size:12px;background:var(--blue-light);color:var(--blue);display:none"></div>
+
+      <div class="field-label" style="margin-bottom:6px">F1 — Body Mass Index (kg/m²)</div>
+      <div class="options" id="mna-f1-opts">
+        <button class="opt-btn" onclick="selMNAf(this,'f1',0)"><div class="radio-dot"></div>BMI &lt;19 — 0</button>
+        <button class="opt-btn" onclick="selMNAf(this,'f1',1)"><div class="radio-dot"></div>BMI 19 to &lt;21 — 1</button>
+        <button class="opt-btn" onclick="selMNAf(this,'f1',2)"><div class="radio-dot"></div>BMI 21 to &lt;23 — 2</button>
+        <button class="opt-btn" onclick="selMNAf(this,'f1',3)"><div class="radio-dot"></div>BMI ≥23 — 3</button>
+      </div>
+
+      <div class="field-label" style="margin-top:10px;margin-bottom:6px">F2 — Calf circumference (cm) — use only if BMI unavailable</div>
+      <div class="input-unit-row" style="margin-bottom:6px">
+        <label>Calf circumference</label>
+        <input type="number" id="mna-cc" inputmode="decimal" step="0.1" min="10" max="60" placeholder="e.g. 31" oninput="scoreMNAcc()">
+        <span class="unit">cm</span>
+      </div>
+      <div class="options" id="mna-f2-opts">
+        <button class="opt-btn" onclick="selMNAf(this,'f2',0)"><div class="radio-dot"></div>CC &lt;31 cm — 0</button>
+        <button class="opt-btn" onclick="selMNAf(this,'f2',3)"><div class="radio-dot"></div>CC ≥31 cm — 3</button>
+      </div>
+
+      <hr class="divider">
+      <div class="score-display">
+        <div class="score-circle" id="mna-circle"><span class="score-num" id="mna-num">—</span><span class="score-denom">/14</span></div>
+        <div class="score-label" id="mna-label">Complete all 6 items</div>
+      </div>
+      <div id="mna-result"></div>
+      </div>
+
+</div>
+
+
+<!-- SCREEN: BEERS -->
+<div id="screen-beers" class="screen"><div class="screen-inner">
+
+  <div class="card">
+    <div style="padding:14px 16px 12px">
+      <div style="font-size:15px;font-weight:600;color:var(--gray-900);margin-bottom:4px">2023 AGS Beers Criteria</div>
+      <div style="font-size:12px;color:var(--gray-600);margin-bottom:12px">Search by generic or brand name</div>
+      <div style="position:relative">
+        <input type="text" id="beers-search" inputmode="search"
+          placeholder="e.g. diphenhydramine, Benadryl, zolpidem…"
+          oninput="searchBeers(this.value)"
+          style="width:100%;padding:11px 40px 11px 14px;border:1.5px solid var(--gray-300);border-radius:var(--radius-sm);font-size:15px;color:var(--gray-900);background:white">
+        <button onclick="document.getElementById('beers-search').value='';searchBeers('')"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray-400);font-size:18px;cursor:pointer;padding:4px">✕</button>
+      </div>
+    </div>
+    <div id="beers-results" style="padding:0 16px 16px"></div>
+  </div>
+
+</div></div>
+
+<!-- SCREEN: SUMMARY -->
+<div id="screen-summary" class="screen"><div class="screen-inner">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Assessment summary</div><div class="card-desc">All completed assessments</div></div>
+    <div class="card-body">
+      <div class="summary-grid" id="sum-grid">
+        <div class="sum-card"><div class="sum-label">SPPB</div><div class="sum-score" id="sum-sppb">—</div><div class="sum-interp" id="sum-sppb-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">TUG</div><div class="sum-score" id="sum-tug">—</div><div class="sum-interp" id="sum-tug-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">Grip strength</div><div class="sum-score" id="sum-grip">—</div><div class="sum-interp" id="sum-grip-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">Mini-Cog</div><div class="sum-score" id="sum-mc">—</div><div class="sum-interp" id="sum-mc-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">MoCA</div><div class="sum-score" id="sum-moca">—</div><div class="sum-interp" id="sum-moca-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">GDS-15</div><div class="sum-score" id="sum-gds">—</div><div class="sum-interp" id="sum-gds-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">Frailty</div><div class="sum-score" id="sum-fr">—</div><div class="sum-interp" id="sum-fr-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">PHQ-2</div><div class="sum-score" id="sum-p2">—</div><div class="sum-interp" id="sum-p2-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">PHQ-9</div><div class="sum-score" id="sum-p9">—</div><div class="sum-interp" id="sum-p9-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">Katz ADL</div><div class="sum-score" id="sum-katz">—</div><div class="sum-interp" id="sum-katz-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">Lawton IADL</div><div class="sum-score" id="sum-lawton">—</div><div class="sum-interp" id="sum-lawton-i">not scored</div></div>
+        <div class="sum-card"><div class="sum-label">MNA-SF</div><div class="sum-score" id="sum-mna">—</div><div class="sum-interp" id="sum-mna-i">not scored</div></div>
+      </div>
+      <button class="action-btn primary" onclick="buildNote()">📋 Generate clinical note</button>
+      <div id="note-output" style="display:none">
+        <div id="narrative-para" style="background:var(--gray-50);border-left:3px solid var(--blue);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;margin-bottom:10px;font-size:14px;line-height:1.7;color:var(--gray-800)"></div>
+        <div class="note-box" id="note-text"></div>
+        <button class="action-btn success" onclick="copyNote()">📋 Copy to clipboard</button>
+        <button class="action-btn secondary" onclick="shareNote()">↑ Share / Export</button>
+      </div>
+      <button class="action-btn secondary" style="margin-top:4px" onclick="clearAll()">🗑 Clear all & reset</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</main>
+
+
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+const PT = { age:null, sex:'', ht:null, wt:null, wt0:null, bmi:null, edu:'12' };
+const SC = {
+  sppb: { bal:null, gait:null, chair:null },
+  tug: null,
+  grip: { dom:[null,null,null], non:[null,null,null] },
+  mc: { recall:null, clock:null },
+  moca: {},
+  gds: Array(15).fill(null),
+  fr: { wl:null, ex:null, grip:null, slow:null, pa:null },
+  ces: [null, null],
+  p2: [null, null],
+  p9: Array(9).fill(null),
+  katz: Array(6).fill(null),
+  lawton: Array(8).fill(null),
+  mna: { a:null, b:null, c:null, d:null, e:null, f:null, fmode:'f1' },
+  cam: [null,null,null,null]
+};
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────
+const SCREEN_NAMES = {
+  home:'GeriAssess', patient:'Patient', physical:'Physical',
+  cognitive:'Cognitive', frailty:'Frailty', adl:'Function',
+  nutrition:'Nutrition', beers:'Beers Criteria', summary:'Summary'
+};
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('back-btn').style.display = 'flex';
+  document.getElementById('app-title').textContent = SCREEN_NAMES[name] || name;
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('app-title').textContent = 'GeriAssess';
+  updateHomeTiles();
+  window.scrollTo(0, 0);
+}
+
+function showScreen(name) { goScreen(name); } // backwards compat
+
+function updateHomeTiles() {
+  // Physical
+  const {bal,gait,chair} = SC.sppb;
+  if (bal!==null&&gait!==null&&chair!==null) {
+    const t=bal+gait+chair; const cls=t>=10?'ok':t>=7?'warn':'bad';
+    setTile('physical','SPPB '+t+'/12',cls);
+  }
+  // Cognitive
+  const {recall,clock}=SC.mc;
+  if (recall!==null&&clock!==null) setTile('cognitive','Mini-Cog '+(recall+clock)+'/5', (recall+clock)<=2?'bad':'ok');
+  // Frailty
+  if (!Object.values(SC.fr).some(v=>v===null)) {
+    const ft=Object.values(SC.fr).reduce((a,b)=>a+(b||0),0);
+    setTile('frailty','Frailty '+ft+'/5', ft===0?'ok':ft<=2?'warn':'bad');
+  }
+  // ADL
+  if (!SC.katz.some(v=>v===null)) {
+    const kt=SC.katz.reduce((a,b)=>a+b,0);
+    setTile('adl','Katz '+kt+'/6', kt===6?'ok':kt>=4?'warn':'bad');
+  }
+  // Nutrition
+  const mnaArr=[SC.mna.a,SC.mna.b,SC.mna.c,SC.mna.d,SC.mna.e,SC.mna.f];
+  if (!mnaArr.some(v=>v===null)) {
+    const mt=mnaArr.reduce((a,b)=>a+b,0);
+    setTile('nutrition','MNA-SF '+mt+'/14', mt>=12?'ok':mt>=8?'warn':'bad');
+  }
+  // Patient
+  if (PT.age||PT.sex) setTile('patient',(PT.age||'?')+'y '+(PT.sex||''),'ok');
+}
+
+function setTile(name, text, cls) {
+  const el = document.getElementById('ht-'+name);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'home-tile-score ' + cls;
+  const tile = el.closest('.home-tile');
+  if (tile) tile.className = 'home-tile done-' + cls;
+}
+
+
+
+
+
+
+// ── ACCORDION — details/summary, one open at a time per screen ──────────
+const ACC_GROUPS = {
+  physical:  ['sppb','tug','grip'],
+  cognitive: ['minicog','moca','gds','phq','cam','mmse'],
+  frailty:   ['frailty'],
+  adl:       ['katz','lawton'],
+  nutrition: ['mna']
+};
+
+function oneOpen(det) {
+  if (!det.open) return; // closing — nothing to do
+  const id = det.id.replace('det-', '');
+  const group = Object.values(ACC_GROUPS).find(g => g.includes(id)) || [];
+  group.forEach(otherId => {
+    if (otherId !== id) {
+      const other = document.getElementById('det-' + otherId);
+      if (other) other.removeAttribute('open');
+    }
+  });
+}
+
+function accordion(id) { // kept for any legacy calls
+  const det = document.getElementById('det-' + id);
+  if (det) det.open = !det.open;
+}
+
+
+
+
+
+function setAccScore(id, text, cls) {
+  const el = document.getElementById('acc-' + id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'acc-score' + (cls ? ' ' + cls : '');
+}
+
+// ── PATIENT ────────────────────────────────────────────────────────────
+function calcBMI() {
+  const h = parseFloat(document.getElementById('pt-ht').value);
+  const w = parseFloat(document.getElementById('pt-wt').value);
+  if (h > 0 && w > 0) {
+    const b = (w / (h / 100) ** 2).toFixed(1);
+    document.getElementById('pt-bmi').value = b;
+    PT.bmi = parseFloat(b);
+  }
+  PT.wt = w || null; PT.ht = h || null;
+  updatePt();
+  checkWtLoss();
+}
+
+function checkWtLoss() {
+  const w0 = parseFloat(document.getElementById('pt-wt0').value) || null;
+  PT.wt0 = w0;
+  const msg = document.getElementById('wl-auto-msg');
+  if (PT.wt && PT.wt0) {
+    const diff = PT.wt0 - PT.wt;
+    const pct = (diff / PT.wt0) * 100;
+    const pos = diff >= 4.5 || pct >= 5;
+    msg.textContent = ` · Auto: ${diff.toFixed(1)} kg (${pct.toFixed(1)}%) — ${pos ? 'POSITIVE' : 'negative'}`;
+    selFr(null,'wl', pos ? 1 : 0, pos ? 'yes' : 'no');
+  } else msg.textContent = '';
+}
+
+function updatePt() {
+  PT.age = parseInt(document.getElementById('pt-age').value) || null;
+  PT.sex = document.getElementById('pt-sex').value;
+  PT.bmi = parseFloat(document.getElementById('pt-bmi').value) || null;
+  PT.ht = parseFloat(document.getElementById('pt-ht').value) || null;
+  PT.edu = document.getElementById('pt-edu').value;
+  // sync MoCA edu
+  document.getElementById('medu').value = PT.edu === 'less' ? '1' : '0';
+  document.getElementById('moca-edu-adj').textContent = PT.edu === 'less' ? '+1 pt (< 12 yrs education)' : 'No adjustment (≥ 12 yrs)';
+  calcMoca();
+  // update patient chip
+  const chip = document.getElementById('pt-chip');
+  const parts = [];
+  if (PT.age) parts.push(PT.age + 'y');
+  if (PT.sex) parts.push(PT.sex === 'M' ? 'Male' : 'Female');
+  if (PT.bmi) parts.push('BMI ' + PT.bmi.toFixed(1));
+  chip.textContent = parts.length ? parts.join(' · ') : 'No patient';
+  // patient summary
+  const ps = document.getElementById('pt-summary');
+  if (parts.length) {
+    ps.style.display = 'block';
+    document.getElementById('pt-sum-title').textContent = (PT.age || '?') + '-year-old ' + (PT.sex === 'M' ? 'male' : PT.sex === 'F' ? 'female' : '');
+    document.getElementById('pt-sum-body').textContent = 'BMI ' + (PT.bmi ? PT.bmi.toFixed(1) : '—') + ' · ' + (PT.edu === 'less' ? '<12 yrs education' : '≥12 yrs education');
+  } else ps.style.display = 'none';
+  // auto-update grip & slowness badges
+  autoGripFromMeasured();
+  autoSlowFromMeasured();
+  buildGripTable();
+  updateGaitLabel();
+  initMNA();
+}
+
+// ── TIMERS ─────────────────────────────────────────────────────────────
+const TIMERS = {};
+function startTimer(id) {
+  const t = TIMERS[id] || {};
+  if (t.running) return;
+  t.elapsed = t.elapsed || 0;
+  t.start = Date.now() - t.elapsed;
+  t.running = true;
+  t.iv = setInterval(() => {
+    t.elapsed = Date.now() - t.start;
+    document.getElementById(id + '-timer').textContent = (t.elapsed / 1000).toFixed(2) + ' s';
+  }, 50);
+  TIMERS[id] = t;
+}
+function stopTimer(id) {
+  const t = TIMERS[id];
+  if (!t || !t.running) return;
+  clearInterval(t.iv); t.running = false;
+  const s = (t.elapsed / 1000).toFixed(2);
+  document.getElementById(id + '-timer').textContent = s + ' s';
+  if (id === 'gait') { document.getElementById('gait-manual').value = s; scoreGait(); }
+  if (id === 'chair') { scoreChairTimer(parseFloat(s)); }
+  if (id === 'tug') { document.getElementById('tug-manual').value = s; scoreTUG(); }
+}
+function resetTimer(id) {
+  const t = TIMERS[id];
+  if (t) { clearInterval(t.iv); t.running = false; t.elapsed = 0; }
+  document.getElementById(id + '-timer').textContent = '0.00 s';
+}
+
+// ── SPPB ───────────────────────────────────────────────────────────────
+function updateGaitLabel() {
+  const lbl = document.getElementById('gait-thresh');
+  if (PT.age) lbl.textContent = '· age ' + PT.age + (PT.sex ? ' · ' + PT.sex : '');
+  else lbl.textContent = '';
+}
+function markBtn(btn, danger) {
+  const alreadySelected = btn.classList.contains('selected');
+  btn.closest('.options').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected','danger'));
+  if (!alreadySelected) {
+    btn.classList.add('selected');
+    if (danger) btn.classList.add('danger');
+  }
+  return alreadySelected; // true = was deselected (toggle off)
+}
+function selSPPB(btn, dom, val) {
+  const off = markBtn(btn, false);
+  SC.sppb[dom] = off ? null : val;
+  const badge = document.getElementById('sppb-' + dom + '-badge');
+  if (badge) { badge.textContent = off ? '—' : val + ' pts'; badge.className = off ? 'status-badge badge-pending' : 'status-badge badge-neg'; }
+  calcSPPB();
+  autoSlowFromMeasured();
+}
+function scoreGait() {
+  const t = parseFloat(document.getElementById('gait-manual').value);
+  if (isNaN(t) || t <= 0) return;
+  const sc = t > 8.70 ? 1 : t >= 6.21 ? 2 : t >= 4.82 ? 3 : 4;
+  const btn = document.getElementById('gait-opt' + sc);
+  if (btn) selSPPB(btn, 'gait', sc);
+  autoSlowFromMeasured();
+}
+function scoreChairTimer(t) {
+  const sc = t > 60 ? 0 : t >= 16.70 ? 1 : t >= 13.70 ? 2 : t >= 11.20 ? 3 : 4;
+  const btn = document.getElementById('chair-opt' + sc);
+  if (btn) selSPPB(btn, 'chair', sc);
+}
+function calcSPPB() {
+  const { bal, gait, chair } = SC.sppb;
+  if (bal === null || gait === null || chair === null) { document.getElementById('sppb-num').textContent = '—'; document.getElementById('sppb-result').innerHTML = ''; return; }
+  const t = bal + gait + chair;
+  document.getElementById('sppb-num').textContent = t;
+  let cls, lb, nt;
+  if (t >= 10) { cls = 'ok'; lb = 'Normal / low risk (' + t + '/12)'; nt = 'Low risk of disability and mobility decline.'; }
+  else if (t >= 7) { cls = 'warn'; lb = 'Mild limitation (' + t + '/12)'; nt = 'Moderate risk. Consider exercise program and PT referral.'; }
+  else if (t >= 4) { cls = 'warn'; lb = 'Moderate limitation (' + t + '/12)'; nt = 'Elevated fall risk. Physical therapy evaluation recommended.'; }
+  else { cls = 'bad'; lb = 'Severe limitation (' + t + '/12)'; nt = 'High disability risk. Urgent geriatrics/PT referral.'; }
+  document.getElementById('sppb-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('sppb', t+'/12', cls);
+}
+
+// ── TUG ────────────────────────────────────────────────────────────────
+function scoreTUG() {
+  const t = parseFloat(document.getElementById('tug-manual').value);
+  if (isNaN(t) || t <= 0) return;
+  SC.tug = t;
+  let cls, lb, nt;
+  if (t < 10) { cls = 'ok'; lb = 'Normal mobility (' + t.toFixed(1) + ' s)'; nt = 'TUG < 10 s. Low fall risk.'; }
+  else if (t < 20) { cls = 'warn'; lb = 'Borderline / mild impairment (' + t.toFixed(1) + ' s)'; nt = 'TUG 10–20 s. Increased fall risk. Gait and balance assessment.'; }
+  else { cls = 'bad'; lb = 'High fall risk (' + t.toFixed(1) + ' s)'; nt = 'TUG > 20 s. Urgent PT, assistive device assessment.'; }
+  document.getElementById('tug-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('tug', t.toFixed(1)+'s', cls);
+  autoSlowFromMeasured();
+}
+
+// ── GRIP STRENGTH ──────────────────────────────────────────────────────
+const NORM_M = [{age:'18–29',m:46,lo:36,hi:56},{age:'30–39',m:46,lo:37,hi:56},{age:'40–49',m:44,lo:35,hi:54},{age:'50–59',m:41,lo:32,hi:50},{age:'60–69',m:37,lo:28,hi:46},{age:'70–79',m:32,lo:23,hi:41},{age:'80+',m:26,lo:18,hi:35}];
+const NORM_F = [{age:'18–29',m:27,lo:20,hi:34},{age:'30–39',m:27,lo:20,hi:34},{age:'40–49',m:26,lo:19,hi:33},{age:'50–59',m:23,lo:17,hi:30},{age:'60–69',m:20,lo:14,hi:27},{age:'70–79',m:17,lo:11,hi:24},{age:'80+',m:14,lo:9,hi:20}];
+function ageGrp(a) { return a<30?0:a<40?1:a<50?2:a<60?3:a<70?4:a<80?5:6; }
+function friedCut(sex, bmi) {
+  if (!sex || !bmi) return null;
+  if (sex === 'M') { return bmi <= 24 ? 29 : bmi <= 28 ? 30 : 32; }
+  return bmi <= 23 ? 17 : bmi <= 26 ? 17.3 : bmi <= 29 ? 18 : 21;
+}
+function slowCut(sex, ht) {
+  if (!sex || !ht) return null;
+  return sex === 'M' ? (ht <= 173 ? 7 : 6) : (ht <= 159 ? 7 : 6);
+}
+
+function showGripTab(which, el) {
+  ['dom','non','sum'].forEach(h => document.getElementById('grip-' + h).style.display = 'none');
+  document.getElementById('grip-' + which).style.display = 'block';
+  document.querySelectorAll('#screen-physical .tab-bar .tab-item').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function calcGrip() {
+  ['dom','non'].forEach(hand => {
+    const vals = [1,2,3].map(i => parseFloat(document.getElementById(hand+i).value)).filter(v => !isNaN(v) && v > 0);
+    SC.grip[hand] = vals;
+    const best = vals.length ? Math.max(...vals) : null;
+    document.getElementById(hand + '-best').textContent = best !== null ? best.toFixed(1) : '—';
+    document.getElementById('gs-' + hand + '-sum').textContent = best !== null ? best.toFixed(1) : '—';
+  });
+  const domBest = SC.grip.dom.length ? Math.max(...SC.grip.dom) : null;
+  const nonBest = SC.grip.non.length ? Math.max(...SC.grip.non) : null;
+  const overall = (domBest && nonBest) ? Math.max(domBest, nonBest) : domBest || nonBest || null;
+  document.getElementById('gs-overall-sum').textContent = overall !== null ? overall.toFixed(1) : '—';
+  autoGripFromMeasured(overall);
+  classifyGrip(overall || domBest);
+}
+
+function autoGripFromMeasured(overall) {
+  const domBest = SC.grip.dom.length ? Math.max(...SC.grip.dom) : null;
+  const nonBest = SC.grip.non.length ? Math.max(...SC.grip.non) : null;
+  const best = overall || (domBest && nonBest ? Math.max(domBest, nonBest) : domBest || nonBest || null);
+  const cut = friedCut(PT.sex, PT.bmi);
+  if (best && cut) {
+    const pos = best <= cut;
+    selFr(null,'grip', pos ? 1 : 0, pos ? 'yes' : 'no');
+    document.getElementById('fr-grip-auto-lbl').textContent = best.toFixed(1) + ' kg vs cutoff ≤' + cut + ' kg';
+    document.getElementById('fr-grip-info').textContent = 'Auto-calculated: ' + best.toFixed(1) + ' kg ' + (pos ? '≤' : '>') + ' cutoff ≤' + cut + ' kg → ' + (pos ? 'POSITIVE' : 'negative');
+  }
+}
+
+function autoSlowFromMeasured() {
+  const cut = slowCut(PT.sex, PT.ht);
+  if (!cut) return;
+  const gaitTime = parseFloat(document.getElementById('gait-manual').value);
+  const tugTime = parseFloat(document.getElementById('tug-manual').value);
+  let slow = null, msg = '';
+  if (!isNaN(gaitTime) && gaitTime > 0) { slow = gaitTime >= cut; msg = '4m walk ' + gaitTime.toFixed(2) + 's vs cutoff ≥' + cut + 's'; }
+  else if (SC.tug) { slow = SC.tug >= cut * 2.5; msg = 'TUG ' + SC.tug.toFixed(1) + 's'; }
+  if (slow !== null) {
+    selFr(null,'slow', slow ? 1 : 0, slow ? 'yes' : 'no');
+    document.getElementById('fr-slow-auto-lbl').textContent = '· auto: ' + msg;
+    document.getElementById('fr-slow-info').textContent = 'Auto: ' + msg + ' → ' + (slow ? 'POSITIVE (slow)' : 'negative');
+  }
+}
+
+function classifyGrip(best) {
+  const el = document.getElementById('grip-result');
+  const cut = friedCut(PT.sex, PT.bmi);
+  const info = document.getElementById('grip-cutoff-info');
+  if (!best) { el.innerHTML = ''; if (!cut) info.textContent = 'Enter sex and BMI in Patient tab to see frailty cutoffs.'; return; }
+  let html = '';
+  if (cut) {
+    const pos = best <= cut;
+    info.textContent = 'Patient: ' + best.toFixed(1) + ' kg · Fried cutoff: ≤' + cut + ' kg · EWGSOP2: ' + (PT.sex === 'M' ? '<27 kg' : '<16 kg');
+    html += `<div class="result-card ${pos?'bad':'ok'}"><div class="r-title">${pos?'Positive':'Negative'} — Fried weakness criterion</div><div class="r-body">${best.toFixed(1)} kg ${pos?'≤':'>'}  cutoff of ${cut} kg → ${pos?'Weakness criterion MET (+1 frailty point)':'criterion not met'}</div></div>`;
+    const ewg = PT.sex === 'M' ? 27 : 16;
+    const ewgPos = best < ewg;
+    html += `<div class="result-card ${ewgPos?'warn':'ok'}" style="margin-top:6px"><div class="r-title">${ewgPos?'Low grip':'Normal grip'} — EWGSOP2 sarcopenia screen</div><div class="r-body">${best.toFixed(1)} kg ${ewgPos?'<':'≥'} ${ewg} kg → ${ewgPos?'Sarcopenia possible. Consider DXA/BIA muscle mass assessment.':'Above sarcopenia threshold.'}</div></div>`;
+  }
+  if (PT.age && PT.sex) {
+    const norm = PT.sex === 'M' ? NORM_M[ageGrp(PT.age)] : NORM_F[ageGrp(PT.age)];
+    if (norm) {
+      let cls2, lb2, nt2;
+      if (best >= norm.m) { cls2='ok'; lb2='At/above age-group mean'; nt2=best.toFixed(1)+' kg ≥ mean ~'+norm.m+' kg for age '+norm.age+'.'; }
+      else if (best >= norm.lo) { cls2='warn'; lb2='Below mean, within range'; nt2=best.toFixed(1)+' kg (range '+norm.lo+'–'+norm.hi+' kg for age '+norm.age+'). Consider resistance exercise.'; }
+      else { cls2='bad'; lb2='Below normative range'; nt2=best.toFixed(1)+' kg < lower bound '+norm.lo+' kg for age '+norm.age+'. Sarcopenia/frailty workup recommended.'; }
+      html += `<div class="result-card ${cls2}" style="margin-top:6px"><div class="r-title">${lb2}</div><div class="r-body">${nt2}</div></div>`;
+    }
+  }
+  el.innerHTML = html;
+  if (cut) setAccScore('grip', best.toFixed(1)+' kg', best<=cut?'bad':'ok');
+  else setAccScore('grip', best.toFixed(1)+' kg', '');
+}
+
+function buildGripTable() {
+  const rows = [
+    {sex:'M',bmi:'≤24',cut:'≤29 kg',match:PT.sex==='M'&&PT.bmi&&PT.bmi<=24},
+    {sex:'M',bmi:'24.1–28',cut:'≤30 kg',match:PT.sex==='M'&&PT.bmi&&PT.bmi>24&&PT.bmi<=28},
+    {sex:'M',bmi:'>28',cut:'≤32 kg',match:PT.sex==='M'&&PT.bmi&&PT.bmi>28},
+    {sex:'F',bmi:'≤23',cut:'≤17 kg',match:PT.sex==='F'&&PT.bmi&&PT.bmi<=23},
+    {sex:'F',bmi:'23.1–26',cut:'≤17.3 kg',match:PT.sex==='F'&&PT.bmi&&PT.bmi>23&&PT.bmi<=26},
+    {sex:'F',bmi:'26.1–29',cut:'≤18 kg',match:PT.sex==='F'&&PT.bmi&&PT.bmi>26&&PT.bmi<=29},
+    {sex:'F',bmi:'>29',cut:'≤21 kg',match:PT.sex==='F'&&PT.bmi&&PT.bmi>29},
+  ];
+  document.getElementById('grip-tbl-body').innerHTML = rows.map(r => `<tr class="${r.match?'highlight':''}"><td>${r.sex==='M'?'Male':'Female'}</td><td>${r.bmi}</td><td>${r.cut}</td></tr>`).join('');
+  const norm = PT.sex && PT.age ? (PT.sex==='M'?NORM_M:NORM_F) : NORM_M;
+  const ag = PT.age ? ageGrp(PT.age) : -1;
+  document.getElementById('norm-tbl-body').innerHTML = NORM_M.map((row,i) => {
+    const f = NORM_F[i];
+    const hi = i === ag;
+    return `<tr class="${hi?'highlight':''}"><td>${row.age}</td><td>${row.m} (${row.lo}–${row.hi})</td><td>${f.m} (${f.lo}–${f.hi})</td></tr>`;
+  }).join('');
+}
+
+// ── MINI-COG ───────────────────────────────────────────────────────────
+function selMC(btn, domain, val) {
+  const off = markBtn(btn, false);
+  SC.mc[domain] = off ? null : val;
+  calcMC();
+}
+function calcMC() {
+  const { recall, clock } = SC.mc;
+  if (recall === null || clock === null) return;
+  const t = recall + clock;
+  document.getElementById('mc-num').textContent = t;
+  const pos = t <= 2;
+  document.getElementById('mc-result').innerHTML = `<div class="result-card ${pos?'bad':'ok'}"><div class="r-title">${pos?'Positive screen — possible dementia':'Negative screen'} (${t}/5)</div><div class="r-body">${pos?'Score ≤2. Follow up with MoCA, labs, neuroimaging. Dementia workup indicated.':'Score ≥3. Cognitive impairment less likely. Consider MoCA if clinical concern remains.'}</div></div>`;
+  setAccScore('minicog', t+'/5', pos?'bad':'ok');
+}
+
+// ── MOCA ───────────────────────────────────────────────────────────────
+function calcMoca() {
+  const ids = ['mv','mn','ma','ml','mab','mr','mo','medu'];
+  const vals = ids.map(id => { const v = document.getElementById(id).value; return v === '' ? null : parseInt(v); });
+  if (vals.some(v => v === null)) { document.getElementById('moca-num').textContent = '—'; document.getElementById('moca-result').innerHTML = ''; return; }
+  const t = Math.min(30, vals.reduce((a,b) => a+b, 0));
+  document.getElementById('moca-num').textContent = t;
+  let cls, lb, nt;
+  if (t >= 26) { cls='ok'; lb='Normal ('+t+'/30)'; nt='No significant cognitive impairment detected.'; }
+  else if (t >= 21) { cls='warn'; lb='Mild cognitive impairment ('+t+'/30)'; nt='MCI range. Annual monitoring; consider neuropsychological testing.'; }
+  else if (t >= 11) { cls='bad'; lb='Moderate impairment ('+t+'/30)'; nt='Significant impairment. Full dementia workup, neurology/geriatrics referral.'; }
+  else { cls='bad'; lb='Severe impairment ('+t+'/30)'; nt='Severe impairment. Urgent specialist evaluation, safety and capacity assessment.'; }
+  document.getElementById('moca-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('moca', t+'/30', cls);
+}
+
+// ── GDS-15 ─────────────────────────────────────────────────────────────
+const GDS_Q = [
+  ['Are you basically satisfied with your life?','no'],
+  ['Have you dropped many of your activities and interests?','yes'],
+  ['Do you feel that your life is empty?','yes'],
+  ['Do you often get bored?','yes'],
+  ['Are you in good spirits most of the time?','no'],
+  ['Are you afraid something bad is going to happen to you?','yes'],
+  ['Do you feel happy most of the time?','no'],
+  ['Do you often feel helpless?','yes'],
+  ['Do you prefer to stay home rather than going out?','yes'],
+  ['Do you feel you have more memory problems than most?','yes'],
+  ['Do you think it is wonderful to be alive now?','no'],
+  ['Do you feel pretty worthless the way you are now?','yes'],
+  ['Do you feel full of energy?','no'],
+  ['Do you feel your situation is hopeless?','yes'],
+  ['Do you think most people are better off than you?','yes']
+];
+function buildGDS() {
+  const c = document.getElementById('gds-questions');
+  c.innerHTML = GDS_Q.map((q, i) => `
+    <div style="margin-bottom:12px">
+      <div class="field-label">${i+1}. ${q[0]}</div>
+      <div class="gds-opts">
+        <button class="gds-btn" id="gds${i}-yes" onclick="selGDS(${i},'yes')">Yes</button>
+        <button class="gds-btn" id="gds${i}-no" onclick="selGDS(${i},'no')">No</button>
+      </div>
+    </div>`).join('');
+}
+function selGDS(idx, val) {
+  const already = SC.gds[idx] === val;
+  SC.gds[idx] = already ? null : val;
+  const yesEl = document.getElementById('gds' + idx + '-yes');
+  const noEl = document.getElementById('gds' + idx + '-no');
+  if (already) {
+    yesEl.className = 'gds-btn';
+    noEl.className = 'gds-btn';
+  } else {
+    yesEl.className = 'gds-btn' + (val === 'yes' ? ' sel-yes' : '');
+    noEl.className = 'gds-btn' + (val === 'no' ? ' sel-no' : '');
+  }
+  calcGDS();
+}
+function calcGDS() {
+  if (SC.gds.some(v => v === null)) return;
+  let t = 0;
+  GDS_Q.forEach((q, i) => { if (SC.gds[i] === q[1]) t++; });
+  document.getElementById('gds-num').textContent = t;
+  let cls, lb, nt;
+  if (t <= 4) { cls='ok'; lb='Normal ('+t+'/15)'; nt='Score 0–4. Depression unlikely.'; }
+  else if (t <= 8) { cls='warn'; lb='Mild depression probable ('+t+'/15)'; nt='Score 5–8. Supportive counseling; re-evaluate in 4–6 weeks.'; }
+  else if (t <= 11) { cls='bad'; lb='Moderate depression ('+t+'/15)'; nt='Score 9–11. Pharmacotherapy and/or psychotherapy recommended.'; }
+  else { cls='bad'; lb='Severe depression ('+t+'/15)'; nt='Score 12–15. Urgent psychiatric evaluation.'; }
+  document.getElementById('gds-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('gds', t+'/15', cls);
+}
+
+// ── FRAILTY ────────────────────────────────────────────────────────────
+function selCES(btn, idx, val) {
+  const off = markBtn(btn, false);
+  SC.ces[idx] = off ? null : val;
+  calcExhaustion();
+}
+function selFr(btn, comp, val, tag) {
+  let off = false;
+  if (btn) {
+    off = markBtn(btn, !off && val === 1);
+    SC.fr[comp] = off ? null : val;
+  } else {
+    SC.fr[comp] = val;
+    ['no','yes'].forEach(t => { const el = document.getElementById('fr-' + comp + '-' + t); if (el) el.classList.remove('selected','danger'); });
+    const el = document.getElementById('fr-' + comp + '-' + tag);
+    if (el) { el.classList.add('selected'); if (val === 1) el.classList.add('danger'); }
+  }
+  const v = SC.fr[comp];
+  const badge = document.getElementById('fr-' + comp + '-badge');
+  if (badge) { badge.textContent = v === null ? '—' : v === 1 ? 'positive (+1)' : 'negative'; badge.className = 'status-badge ' + (v === null ? 'badge-pending' : v === 1 ? 'badge-pos' : 'badge-neg'); }
+  updateFrCompGrid();
+  calcFr();
+}
+function calcExhaustion() {
+  if (SC.ces[0] === null || SC.ces[1] === null) return;
+  const pos = SC.ces[0] >= 2 || SC.ces[1] >= 2;
+  selFr(null,'ex', pos ? 1 : 0, pos ? 'yes' : 'no');
+}
+function scorePA() {
+  const kcal = parseFloat(document.getElementById('fr-kcal').value);
+  if (isNaN(kcal) || !PT.sex) return;
+  const thresh = PT.sex === 'M' ? 383 : 270;
+  const pos = kcal < thresh;
+  selFr(null,'pa', pos ? 1 : 0, pos ? 'yes' : 'no');
+}
+function updateFrCompGrid() {
+  const map = { wl:'wl', ex:'ex', grip:'grip', slow:'slow', pa:'pa' };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById('cg-' + id);
+    if (!el) return;
+    const v = SC.fr[k];
+    el.className = 'comp-item' + (v === null ? '' : v === 1 ? ' pos' : ' neg');
+    el.querySelector('.ci-icon').textContent = v === null ? '—' : v === 1 ? '✓' : '✗';
+  });
+}
+function calcFr() {
+  const vals = Object.values(SC.fr);
+  if (vals.some(v => v === null)) { document.getElementById('fr-num').textContent = '?'; document.getElementById('fr-result').innerHTML = ''; return; }
+  const t = vals.reduce((a,b) => a + (b||0), 0);
+  document.getElementById('fr-num').textContent = t;
+  let cls, lb, nt;
+  if (t === 0) { cls='ok'; lb='Robust (0/5)'; nt='No frailty components. Continue preventive care and annual reassessment.'; }
+  else if (t <= 2) { cls='warn'; lb='Pre-frail ('+t+'/5)'; nt='1–2 components positive. Targeted exercise, nutrition optimization, fall prevention. Reassess in 6 months.'; }
+  else { cls='bad'; lb='Frail ('+t+'/5)'; nt='≥3 components. High risk for falls, hospitalization, and mortality. Comprehensive geriatric assessment, multidisciplinary team approach.'; }
+  document.getElementById('fr-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('frailty', t+'/5', cls);
+}
+
+// ── PHQ ────────────────────────────────────────────────────────────────
+const PHQ9_Q = ['Little interest or pleasure in doing things','Feeling down, depressed, or hopeless','Trouble falling/staying asleep or sleeping too much','Feeling tired or having little energy','Poor appetite or overeating','Feeling bad about yourself or feeling like a failure','Trouble concentrating on things','Moving or speaking so slowly others notice, or being fidgety/restless','Thoughts that you would be better off dead or of hurting yourself'];
+function buildPHQ9() {
+  const c = document.getElementById('phq9-questions');
+  c.innerHTML = PHQ9_Q.map((q, i) => `
+    <div style="margin-bottom:12px">
+      <label class="field-label">${i+1}. ${q}</label>
+      <div class="options opt-row">
+        ${[0,1,2,3].map(v => `<button class="opt-btn" id="p9q${i}v${v}" onclick="selP9(this,${i},${v})"><div class="radio-dot"></div>${v}</button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function selP2(btn, idx, val) {
+  const off = markBtn(btn, false);
+  SC.p2[idx] = off ? null : val;
+  calcP2();
+}
+function calcP2() {
+  if (SC.p2.some(v => v === null)) { document.getElementById('p2-num').textContent = '—'; document.getElementById('p2-result').innerHTML = ''; document.getElementById('p2-goto').style.display = 'none'; return; }
+  const t = SC.p2.reduce((a,b) => a+b, 0);
+  document.getElementById('p2-num').textContent = t;
+  const pos = t >= 3;
+  document.getElementById('p2-result').innerHTML = `<div class="result-card ${pos?'bad':'ok'}"><div class="r-title">${pos?'Positive screen — administer PHQ-9':'Negative screen'} (${t}/6)</div><div class="r-body">${pos?'Score ≥3. Proceed to PHQ-9 for severity assessment.':'Score <3. Depression unlikely.'}</div></div>`;
+  document.getElementById('p2-goto').style.display = pos ? 'block' : 'none';
+  setAccScore('phq', 'PHQ-2: '+t, pos?'bad':'ok');
+}
+function selP9(btn, idx, val) {
+  const off = markBtn(btn, idx === 8 && val >= 1);
+  SC.p9[idx] = off ? null : val;
+  calcP9();
+}
+function calcP9() {
+  if (SC.p9.some(v => v === null)) return;
+  const t = SC.p9.reduce((a,b) => a+b, 0);
+  document.getElementById('p9-num').textContent = t;
+  let cls, lb, nt;
+  if (t <= 4) { cls='ok'; lb='Minimal/no depression ('+t+'/27)'; nt='Reassurance and monitoring.'; }
+  else if (t <= 9) { cls='warn'; lb='Mild depression ('+t+'/27)'; nt='Watchful waiting, supportive counseling.'; }
+  else if (t <= 14) { cls='bad'; lb='Moderate depression ('+t+'/27)'; nt='Treatment plan: counseling and/or pharmacotherapy.'; }
+  else if (t <= 19) { cls='bad'; lb='Moderately severe depression ('+t+'/27)'; nt='Active pharmacotherapy ± psychotherapy.'; }
+  else { cls='bad'; lb='Severe depression ('+t+'/27)'; nt='Immediate treatment. Consider psychiatry referral.'; }
+  let si = '';
+  if (SC.p9[8] >= 1) si = `<div class="result-card bad" style="margin-top:6px"><div class="r-title">⚠ SI screen positive — item 9 ≥1</div><div class="r-body">Assess suicidality directly. Document safety assessment and plan.</div></div>`;
+  document.getElementById('p9-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>${si}`;
+  setAccScore('phq', 'PHQ-9: '+t, cls);
+}
+
+function showPHQTab(which, el) {
+  document.getElementById('phq2-panel').style.display = which === 'p2' ? 'block' : 'none';
+  document.getElementById('phq9-panel').style.display = which === 'p9' ? 'block' : 'none';
+  document.querySelectorAll('#phq-tab-bar .tab-item').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+function showPHQTabByName(which) {
+  const tabs = document.querySelectorAll('#phq-tab-bar .tab-item');
+  showPHQTab(which, which === 'p9' ? tabs[1] : tabs[0]);
+}
+
+
+// ── CAM ────────────────────────────────────────────────────────────────
+function selCAM(btn, idx, val) {
+  const off = markBtn(btn, val === 1);
+  SC.cam[idx] = off ? null : val;
+  const badge = document.getElementById('cam-' + (idx+1) + '-badge');
+  if (badge) { badge.textContent = off ? '—' : val ? 'present' : 'absent'; badge.className = 'status-badge ' + (off ? 'badge-pending' : val ? 'badge-pos' : 'badge-neg'); }
+  calcCAM();
+}
+function calcCAM() {
+  if (SC.cam.some(v => v === null)) { document.getElementById('cam-num').textContent = '—'; document.getElementById('cam-result').innerHTML = ''; return; }
+  const [f1,f2,f3,f4] = SC.cam;
+  const pos = f1===1 && f2===1 && (f3===1 || f4===1);
+  document.getElementById('cam-num').textContent = pos ? '+' : '–';
+  const cls = pos ? 'bad' : 'ok';
+  const lb = pos ? 'CAM POSITIVE — Delirium likely' : 'CAM Negative — Delirium unlikely';
+  const nt = pos ? 'All required features present. Assess for underlying cause: infection, medications, metabolic, pain, urinary retention, constipation.' : 'Required features not met. Monitor if clinical suspicion remains.';
+  document.getElementById('cam-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('cam', pos ? 'Positive' : 'Negative', cls);
+}
+
+// ── MMSE ───────────────────────────────────────────────────────────────
+function calcMMSE() {
+  const ids = ['mmse-ot','mmse-op','mmse-reg','mmse-att','mmse-rec','mmse-nam','mmse-rep','mmse-cmd','mmse-read','mmse-writ','mmse-draw'];
+  const vals = ids.map(id => { const v = document.getElementById(id)?.value; return v===''||!v ? null : parseInt(v); });
+  if (vals.some(v => v === null)) { document.getElementById('mmse-num').textContent = '—'; document.getElementById('mmse-result').innerHTML = ''; return; }
+  const t = vals.reduce((a,b) => a+b, 0);
+  document.getElementById('mmse-num').textContent = t;
+  let cls, lb, nt;
+  if (t >= 24) { cls='ok'; lb='Normal ('+t+'/30)'; nt='Score ≥24. No significant cognitive impairment.'; }
+  else if (t >= 18) { cls='warn'; lb='Mild impairment ('+t+'/30)'; nt='Score 18–23. Consider further evaluation and monitoring.'; }
+  else if (t >= 12) { cls='bad'; lb='Moderate impairment ('+t+'/30)'; nt='Score 12–17. Specialist referral recommended.'; }
+  else { cls='bad'; lb='Severe impairment ('+t+'/30)'; nt='Score <12. Urgent evaluation, capacity assessment.'; }
+  document.getElementById('mmse-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('mmse', t+'/30', cls);
+}
+
+// ── ADL / IADL ──────────────────────────────────────────────────────────
+const KATZ_ITEMS = [
+  { label: 'Bathing', desc: 'Sponge bath, tub bath, or shower', ind: 'Bathes self completely or needs help only in one body part (back, genitals, or disabled extremity)', dep: 'Needs help with more than one body part, getting in/out of tub, or cannot bathe self' },
+  { label: 'Dressing', desc: 'Getting clothes from closets and drawers', ind: 'Gets clothes and dresses without help (except for tying shoes)', dep: 'Needs help getting clothes or getting dressed, or stays partly or fully undressed' },
+  { label: 'Toileting', desc: 'Going to the toilet for urination and bowel movements', ind: 'Goes to toilet, gets on/off, cleans self without help', dep: 'Needs help transferring to toilet, cleaning self, or uses bedpan/commode' },
+  { label: 'Transferring', desc: 'Moving in and out of bed and chair', ind: 'Moves in/out of bed or chair unassisted (may use mechanical aids)', dep: 'Needs help moving in/out of bed or chair; does not perform one or more transfers' },
+  { label: 'Continence', desc: 'Control of bowel and bladder', ind: 'Exercises complete self-control over urination and defecation', dep: 'Is partially or totally incontinent of bowel or bladder' },
+  { label: 'Feeding', desc: 'Getting food from plate or bowl to mouth', ind: 'Gets food from plate to mouth without help (cutting food and preparing food excluded)', dep: 'Needs partial or total help with feeding, or requires parenteral feeding' }
+];
+
+const LAWTON_ITEMS = [
+  { label: 'Ability to use telephone', opts: [{ t: 'Operates telephone independently', v: 1 }, { t: 'Dials only a few well-known numbers', v: 1 }, { t: 'Answers phone but does not dial', v: 1 }, { t: 'Does not use telephone at all', v: 0 }] },
+  { label: 'Shopping', opts: [{ t: 'Takes care of all shopping independently', v: 1 }, { t: 'Shops independently for small purchases', v: 0 }, { t: 'Needs to be accompanied on any shopping trip', v: 0 }, { t: 'Completely unable to shop', v: 0 }] },
+  { label: 'Food preparation', opts: [{ t: 'Plans, prepares, and serves adequate meals independently', v: 1 }, { t: 'Prepares adequate meals if given ingredients', v: 0 }, { t: 'Heats and serves prepared meals or prepares meals but does not maintain adequate diet', v: 0 }, { t: 'Needs to have meals prepared and served', v: 0 }] },
+  { label: 'Housekeeping', opts: [{ t: 'Maintains house alone or with occasional assistance', v: 1 }, { t: 'Performs light daily tasks such as dishes, bed making', v: 1 }, { t: 'Performs light tasks but cannot maintain acceptable cleanliness', v: 1 }, { t: 'Needs help with all home maintenance tasks', v: 1 }, { t: 'Does not participate in any housekeeping tasks', v: 0 }] },
+  { label: 'Laundry', opts: [{ t: 'Does personal laundry completely', v: 1 }, { t: 'Launders small items — rinses socks, stockings, etc.', v: 1 }, { t: 'All laundry must be done by others', v: 0 }] },
+  { label: 'Mode of transportation', opts: [{ t: 'Travels independently on public transport or drives own car', v: 1 }, { t: 'Arranges own travel via taxi, but does not use public transport', v: 1 }, { t: 'Travels on public transport when accompanied', v: 1 }, { t: 'Travel limited to taxi or auto with assistance', v: 0 }, { t: 'Does not travel at all', v: 0 }] },
+  { label: 'Responsibility for own medications', opts: [{ t: 'Is responsible for taking medication in correct dosages at correct time', v: 1 }, { t: 'Takes responsibility if medication is prepared in advance', v: 0 }, { t: 'Is not capable of dispensing own medication', v: 0 }] },
+  { label: 'Ability to handle finances', opts: [{ t: 'Manages financial matters independently — budgets, writes checks, pays bills', v: 1 }, { t: 'Manages day-to-day purchases but needs help with banking, major purchases', v: 1 }, { t: 'Incapable of handling money', v: 0 }] }
+];
+
+function buildKatz() {
+  const c = document.getElementById('katz-items');
+  c.innerHTML = KATZ_ITEMS.map((item, i) => `
+    <div style="margin-bottom:14px">
+      <div class="section-hdr" style="margin-top:0;margin-bottom:6px">
+        <div class="section-num">${i+1}</div>
+        <div class="section-hdr-title">${item.label}</div>
+        <span class="status-badge badge-pending" id="katz-badge-${i}">—</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray-600);margin-bottom:8px">${item.desc}</div>
+      <div class="options opt-row">
+        <button class="opt-btn" id="katz-${i}-1" onclick="selKatz(this,${i},1)">
+          <div class="radio-dot"></div>
+          <span style="text-align:left"><strong style="display:block;font-size:12px;margin-bottom:2px">Independent (1)</strong><span style="font-size:11px;color:inherit;opacity:0.85">${item.ind}</span></span>
+        </button>
+        <button class="opt-btn" id="katz-${i}-0" onclick="selKatz(this,${i},0)">
+          <div class="radio-dot"></div>
+          <span style="text-align:left"><strong style="display:block;font-size:12px;margin-bottom:2px">Dependent (0)</strong><span style="font-size:11px;color:inherit;opacity:0.85">${item.dep}</span></span>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function selKatz(btn, idx, val) {
+  const off = markBtn(btn, val === 0);
+  SC.katz[idx] = off ? null : val;
+  const badge = document.getElementById(`katz-badge-${idx}`);
+  if (badge) { badge.textContent = off ? '—' : val === 1 ? 'independent' : 'dependent'; badge.className = 'status-badge ' + (off ? 'badge-pending' : val === 1 ? 'badge-neg' : 'badge-pos'); }
+  calcKatz();
+}
+
+function calcKatz() {
+  if (SC.katz.some(v => v === null)) { document.getElementById('katz-num').textContent = '—'; document.getElementById('katz-result').innerHTML = ''; return; }
+  const t = SC.katz.reduce((a,b) => a+b, 0);
+  document.getElementById('katz-num').textContent = t;
+  let cls, lb, nt;
+  const deps = KATZ_ITEMS.filter((_, i) => SC.katz[i] === 0).map(item => item.label);
+  if (t === 6) { cls='ok'; lb='Fully independent (6/6)'; nt='Independent in all 6 basic activities of daily living.'; }
+  else if (t >= 4) { cls='warn'; lb='Mild dependence (' + t + '/6)'; nt='Dependent in: ' + deps.join(', ') + '. Consider home safety assessment and caregiver support.'; }
+  else if (t >= 2) { cls='bad'; lb='Moderate dependence (' + t + '/6)'; nt='Dependent in: ' + deps.join(', ') + '. Functional decline present. Social work, OT referral.'; }
+  else { cls='bad'; lb='Severe dependence (' + t + '/6)'; nt='Dependent in: ' + deps.join(', ') + '. Significant care needs. Discuss care setting and caregiver burden.'; }
+  document.getElementById('katz-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('katz', t+'/6', cls);
+}
+
+function buildLawton() {
+  const c = document.getElementById('lawton-items');
+  c.innerHTML = LAWTON_ITEMS.map((item, i) => `
+    <div style="margin-bottom:14px">
+      <div class="section-hdr" style="margin-top:0;margin-bottom:6px">
+        <div class="section-num">${i+1}</div>
+        <div class="section-hdr-title">${item.label}</div>
+        <span class="status-badge badge-pending" id="lawton-badge-${i}">—</span>
+      </div>
+      <div class="options">
+        ${item.opts.map((opt, j) => `
+          <button class="opt-btn" id="lawton-${i}-${j}" onclick="selLawton(this,${i},${j},${opt.v})">
+            <div class="radio-dot"></div>
+            <span style="font-size:13px;text-align:left">${opt.t} <span style="font-size:11px;opacity:0.75">(${opt.v} pt)</span></span>
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function selLawton(btn, itemIdx, optIdx, val) {
+  const off = markBtn(btn, val === 0);
+  SC.lawton[itemIdx] = off ? null : val;
+  const badge = document.getElementById(`lawton-badge-${itemIdx}`);
+  if (badge) { badge.textContent = off ? '—' : val === 1 ? '1 pt' : '0 pt'; badge.className = 'status-badge ' + (off ? 'badge-pending' : val === 1 ? 'badge-neg' : 'badge-pos'); }
+  calcLawton();
+}
+
+function calcLawton() {
+  if (SC.lawton.some(v => v === null)) { document.getElementById('lawton-num').textContent = '—'; document.getElementById('lawton-result').innerHTML = ''; return; }
+  const t = SC.lawton.reduce((a,b) => a+b, 0);
+  document.getElementById('lawton-num').textContent = t;
+  let cls, lb, nt;
+  const deps = LAWTON_ITEMS.filter((_, i) => SC.lawton[i] === 0).map(item => item.label);
+  if (t === 8) { cls='ok'; lb='Fully independent (8/8)'; nt='Independent in all instrumental activities of daily living.'; }
+  else if (t >= 6) { cls='warn'; lb='Mild IADL dependence (' + t + '/8)'; nt='Needs assistance with: ' + deps.join(', ') + '. Consider home supports.'; }
+  else if (t >= 3) { cls='bad'; lb='Moderate IADL dependence (' + t + '/8)'; nt='Needs assistance with: ' + deps.join(', ') + '. Significant functional impairment. OT/social work referral.'; }
+  else { cls='bad'; lb='Severe IADL dependence (' + t + '/8)'; nt='Needs assistance with: ' + deps.join(', ') + '. Unable to live independently without substantial support.'; }
+  document.getElementById('lawton-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('lawton', t+'/8', cls);
+}
+
+
+// ── MNA-SF ─────────────────────────────────────────────────────────────
+function initMNA() {
+  // auto-fill BMI from patient tab
+  if (PT.bmi) {
+    const bmiScore = PT.bmi < 19 ? 0 : PT.bmi < 21 ? 1 : PT.bmi < 23 ? 2 : 3;
+    SC.mna.f = bmiScore;
+    SC.mna.fmode = 'f1';
+    const opts = document.querySelectorAll('#mna-f1-opts .opt-btn');
+    opts.forEach(b => b.classList.remove('selected'));
+    if (opts[bmiScore]) opts[bmiScore].classList.add('selected');
+    const autoEl = document.getElementById('mna-f-auto');
+    autoEl.style.display = 'block';
+    autoEl.textContent = 'Auto-filled from Patient tab: BMI ' + PT.bmi.toFixed(1) + ' → ' + bmiScore + ' pts';
+    const badge = document.getElementById('mna-f-badge');
+    if (badge) { badge.textContent = bmiScore + ' pts'; badge.className = 'status-badge badge-neg'; }
+  }
+  // auto-fill weight loss from patient tab
+  if (PT.wt && PT.wt0) {
+    const diff = PT.wt0 - PT.wt;
+    let bScore = null;
+    if (diff > 3) bScore = 0;
+    else if (diff >= 1) bScore = 2;
+    else bScore = 3;
+    SC.mna.b = bScore;
+    const opts = document.querySelectorAll('[onclick^="selMNA(this,\'b\'"]');
+    opts.forEach(b => b.classList.remove('selected'));
+    const scoreMap = {0:0, 2:1, 3:2};
+    const target = opts[scoreMap[bScore]];
+    if (target) target.classList.add('selected');
+    const autoEl = document.getElementById('mna-b-auto');
+    autoEl.style.display = 'block';
+    autoEl.textContent = 'Auto-filled: weight change ' + diff.toFixed(1) + ' kg in past year → ' + bScore + ' pts';
+    const badge = document.getElementById('mna-b-badge');
+    if (badge) { badge.textContent = bScore + ' pts'; badge.className = 'status-badge badge-neg'; }
+    calcMNA();
+  }
+}
+
+function selMNA(btn, item, val) {
+  const off = markBtn(btn, false);
+  SC.mna[item] = off ? null : val;
+  const badge = document.getElementById('mna-' + item + '-badge');
+  if (badge) { badge.textContent = off ? '—' : val + ' pts'; badge.className = off ? 'status-badge badge-pending' : 'status-badge badge-neg'; }
+  calcMNA();
+}
+
+function selMNAf(btn, mode, val) {
+  const alreadySelected = btn.classList.contains('selected');
+  document.querySelectorAll('#mna-f1-opts .opt-btn, #mna-f2-opts .opt-btn').forEach(b => b.classList.remove('selected'));
+  const off = alreadySelected;
+  if (!off) btn.classList.add('selected');
+  SC.mna.f = off ? null : val;
+  SC.mna.fmode = mode;
+  const badge = document.getElementById('mna-f-badge');
+  if (badge) { badge.textContent = off ? '—' : val + ' pts (' + (mode === 'f1' ? 'BMI' : 'CC') + ')'; badge.className = off ? 'status-badge badge-pending' : 'status-badge badge-neg'; }
+  calcMNA();
+}
+
+function scoreMNAcc() {
+  const cc = parseFloat(document.getElementById('mna-cc').value);
+  if (isNaN(cc) || cc <= 0) return;
+  const val = cc < 31 ? 0 : 3;
+  const opts = document.querySelectorAll('#mna-f2-opts .opt-btn');
+  opts.forEach(b => b.classList.remove('selected'));
+  const target = Array.from(opts).find(b => b.getAttribute('onclick').includes(',' + val + ')'));
+  if (target) selMNAf(target, 'f2', val);
+}
+
+function calcMNA() {
+  const { a, b, c, d, e, f } = SC.mna;
+  const items = [a, b, c, d, e, f];
+  if (items.some(v => v === null)) {
+    document.getElementById('mna-num').textContent = '—';
+    document.getElementById('mna-result').innerHTML = '';
+    return;
+  }
+  const t = items.reduce((s, v) => s + v, 0);
+  document.getElementById('mna-num').textContent = t;
+  let cls, lb, nt;
+  if (t >= 12) {
+    cls = 'ok'; lb = 'Normal nutritional status (' + t + '/14)';
+    nt = 'Score 12–14. No intervention required. Reassess at each clinic visit.';
+  } else if (t >= 8) {
+    cls = 'warn'; lb = 'At risk of malnutrition (' + t + '/14)';
+    nt = 'Score 8–11. Nutritional counseling recommended. Consider dietitian referral and nutritional supplementation.';
+  } else {
+    cls = 'bad'; lb = 'Malnourished (' + t + '/14)';
+    nt = 'Score 0–7. Significant malnutrition. Urgent dietitian referral. Individualized nutritional intervention required.';
+  }
+  document.getElementById('mna-result').innerHTML = `<div class="result-card ${cls}"><div class="r-title">${lb}</div><div class="r-body">${nt}</div></div>`;
+  setAccScore('mna', t + '/14', cls);
+}
+
+function setSumCard(id, score, interp, cls) {
+  document.getElementById('sum-' + id).textContent = score;
+  document.getElementById('sum-' + id + '-i').textContent = interp;
+  const card = document.getElementById('sum-' + id).closest('.sum-card');
+  card.className = 'sum-card' + (cls ? ' ' + cls : '');
+}
+function buildSummary() {
+  const { bal, gait, chair } = SC.sppb;
+  if (bal !== null && gait !== null && chair !== null) {
+    const t = bal + gait + chair;
+    setSumCard('sppb', t + '/12', t >= 10 ? 'normal' : t >= 7 ? 'mild limit' : t >= 4 ? 'mod limit' : 'severe', t >= 10 ? 'ok' : t >= 7 ? 'warn' : 'bad');
+  }
+  if (SC.tug) setSumCard('tug', SC.tug.toFixed(1) + 's', SC.tug < 10 ? 'normal' : SC.tug < 20 ? 'borderline' : 'high risk', SC.tug < 10 ? 'ok' : SC.tug < 20 ? 'warn' : 'bad');
+  const domBest = SC.grip.dom.length ? Math.max(...SC.grip.dom) : null;
+  const nonBest = SC.grip.non.length ? Math.max(...SC.grip.non) : null;
+  const gripBest = domBest || nonBest;
+  if (gripBest) { const cut = friedCut(PT.sex, PT.bmi); setSumCard('grip', gripBest.toFixed(1) + ' kg', cut ? (gripBest <= cut ? 'weak (frailty)' : 'normal') : 'no cutoff', cut && gripBest <= cut ? 'bad' : 'ok'); }
+  const { recall, clock } = SC.mc;
+  if (recall !== null && clock !== null) { const t = recall + clock; setSumCard('mc', t + '/5', t <= 2 ? 'positive screen' : 'negative', t <= 2 ? 'bad' : 'ok'); }
+  const mids = ['mv','mn','ma','ml','mab','mr','mo','medu'];
+  const mvs = mids.map(id => { const v = document.getElementById(id).value; return v === '' ? null : parseInt(v); });
+  if (!mvs.some(v => v === null)) { const t = Math.min(30, mvs.reduce((a,b) => a+b, 0)); setSumCard('moca', t + '/30', t >= 26 ? 'normal' : t >= 21 ? 'mild CI' : t >= 11 ? 'moderate' : 'severe', t >= 26 ? 'ok' : t >= 21 ? 'warn' : 'bad'); }
+  if (!SC.gds.some(v => v === null)) { let gt = 0; GDS_Q.forEach((q,i) => { if (SC.gds[i] === q[1]) gt++; }); setSumCard('gds', gt + '/15', gt <= 4 ? 'normal' : gt <= 8 ? 'mild' : 'moderate+', gt <= 4 ? 'ok' : gt <= 8 ? 'warn' : 'bad'); }
+  if (!Object.values(SC.fr).some(v => v === null)) { const ft = Object.values(SC.fr).reduce((a,b) => a+(b||0), 0); setSumCard('fr', ft + '/5', ft === 0 ? 'robust' : ft <= 2 ? 'pre-frail' : 'frail', ft === 0 ? 'ok' : ft <= 2 ? 'warn' : 'bad'); }
+  if (!SC.p2.some(v => v === null)) { const pt = SC.p2.reduce((a,b) => a+b, 0); setSumCard('p2', pt + '/6', pt < 3 ? 'negative' : 'positive', pt < 3 ? 'ok' : 'bad'); }
+  if (!SC.p9.some(v => v === null)) { const p9t = SC.p9.reduce((a,b) => a+b, 0); setSumCard('p9', p9t + '/27', p9t <= 4 ? 'minimal' : p9t <= 9 ? 'mild' : p9t <= 14 ? 'moderate' : p9t <= 19 ? 'mod-severe' : 'severe', p9t <= 4 ? 'ok' : p9t <= 9 ? 'warn' : 'bad'); }
+  if (!SC.katz.some(v => v === null)) { const kt = SC.katz.reduce((a,b)=>a+b,0); setSumCard('katz', kt+'/6', kt===6?'independent':kt>=4?'mild dep':kt>=2?'mod dep':'severe dep', kt===6?'ok':kt>=4?'warn':'bad'); }
+  if (!SC.lawton.some(v => v === null)) { const lt = SC.lawton.reduce((a,b)=>a+b,0); setSumCard('lawton', lt+'/8', lt===8?'independent':lt>=6?'mild dep':lt>=3?'mod dep':'severe dep', lt===8?'ok':lt>=6?'warn':'bad'); }
+  const mnaItems = [SC.mna.a, SC.mna.b, SC.mna.c, SC.mna.d, SC.mna.e, SC.mna.f];
+  if (!mnaItems.some(v => v === null)) { const mt = mnaItems.reduce((a,b)=>a+b,0); setSumCard('mna', mt+'/14', mt>=12?'normal':mt>=8?'at risk':'malnourished', mt>=12?'ok':mt>=8?'warn':'bad'); }
+}
+
+let noteText = '';
+function buildNote() {
+  buildSummary();
+
+  // ── collect all scored values ──
+  const age = PT.age ? PT.age + '-year-old' : null;
+  const sex = PT.sex === 'M' ? 'male' : PT.sex === 'F' ? 'female' : null;
+  const { bal, gait, chair } = SC.sppb;
+  const sppbDone = bal !== null && gait !== null && chair !== null;
+  const sppbT = sppbDone ? bal + gait + chair : null;
+  const domB = SC.grip.dom.length ? Math.max(...SC.grip.dom) : null;
+  const nonB = SC.grip.non.length ? Math.max(...SC.grip.non) : null;
+  const gripBest = (domB && nonB) ? Math.max(domB, nonB) : domB || nonB || null;
+  const gripCut = friedCut(PT.sex, PT.bmi);
+  const { recall, clock } = SC.mc;
+  const mcDone = recall !== null && clock !== null;
+  const mcT = mcDone ? recall + clock : null;
+  const mvs = ['mv','mn','ma','ml','mab','mr','mo','medu'].map(id => { const v = document.getElementById(id).value; return v === '' ? null : parseInt(v); });
+  const mocaDone = !mvs.some(v => v === null);
+  const mocaT = mocaDone ? Math.min(30, mvs.reduce((a,b) => a+b, 0)) : null;
+  let gdsT = null;
+  if (!SC.gds.some(v => v === null)) { gdsT = 0; GDS_Q.forEach((q,i) => { if (SC.gds[i] === q[1]) gdsT++; }); }
+  const frDone = !Object.values(SC.fr).some(v => v === null);
+  const frT = frDone ? Object.values(SC.fr).reduce((a,b) => a+(b||0), 0) : null;
+  const p2Done = !SC.p2.some(v => v === null);
+  const p2T = p2Done ? SC.p2.reduce((a,b) => a+b, 0) : null;
+  const p9Done = !SC.p9.some(v => v === null);
+  const p9T = p9Done ? SC.p9.reduce((a,b) => a+b, 0) : null;
+  const mmseIds=['mmse-ot','mmse-op','mmse-reg','mmse-att','mmse-rec','mmse-nam','mmse-rep','mmse-cmd','mmse-read','mmse-writ','mmse-draw'];
+  const mmseVals=mmseIds.map(id=>{const v=document.getElementById(id)?.value;return v===''||!v?null:parseInt(v);});
+  const mmseDone = !mmseVals.some(v=>v===null);
+  const mmseT = mmseDone ? mmseVals.reduce((a,b)=>a+b,0) : null;
+  const mnaItems = [SC.mna.a, SC.mna.b, SC.mna.c, SC.mna.d, SC.mna.e, SC.mna.f];
+  const mnaDone = !mnaItems.some(v => v === null);
+  const mnaT = mnaDone ? mnaItems.reduce((a,b) => a+b, 0) : null;
+  const katzT = katzDone ? SC.katz.reduce((a,b) => a+b, 0) : null;
+  const lawtonDone = !SC.lawton.some(v => v === null);
+  const lawtonT = lawtonDone ? SC.lawton.reduce((a,b) => a+b, 0) : null;
+
+  // ── narrative paragraph ──
+  const sentences = [];
+  const ptDesc = [age, sex].filter(Boolean).join(' ') || 'This patient';
+  sentences.push((age || sex ? 'This is a ' + [age, sex].filter(Boolean).join(' ') : 'This patient') + (PT.bmi ? ' with a BMI of ' + PT.bmi.toFixed(1) : '') + ' who presented for comprehensive geriatric assessment.');
+
+  // Physical
+  const physParts = [];
+  if (sppbT !== null) physParts.push('SPPB score of ' + sppbT + '/12 (' + (sppbT >= 10 ? 'normal' : sppbT >= 7 ? 'mild' : sppbT >= 4 ? 'moderate' : 'severe') + ' limitation)');
+  if (SC.tug) physParts.push('TUG of ' + SC.tug.toFixed(1) + ' s (' + (SC.tug < 10 ? 'normal' : SC.tug < 20 ? 'borderline fall risk' : 'high fall risk') + ')');
+  if (gripBest) physParts.push('grip strength of ' + gripBest.toFixed(1) + ' kg (' + (gripCut ? (gripBest <= gripCut ? 'below frailty threshold' : 'above frailty threshold') : 'measured') + ')');
+  if (physParts.length) sentences.push('Physical performance assessment revealed a ' + physParts.join(', ') + '.');
+
+  // Cognitive
+  const cogParts = [];
+  if (mcT !== null) cogParts.push('Mini-Cog ' + mcT + '/5 (' + (mcT <= 2 ? 'positive cognitive screen' : 'negative screen') + ')');
+  if (mocaT !== null) cogParts.push('MoCA ' + mocaT + '/30 (' + (mocaT >= 26 ? 'normal' : mocaT >= 21 ? 'mild cognitive impairment' : mocaT >= 11 ? 'moderate impairment' : 'severe impairment') + ')');
+  if (cogParts.length) sentences.push('Cognitive screening showed ' + cogParts.join(' and ') + '.');
+
+  // Mood
+  const moodParts = [];
+  if (gdsT !== null) moodParts.push('GDS-15 of ' + gdsT + '/15 (' + (gdsT <= 4 ? 'no depression' : gdsT <= 8 ? 'mild depression probable' : gdsT <= 11 ? 'moderate depression' : 'severe depression') + ')');
+  if (p2T !== null) moodParts.push('PHQ-2 of ' + p2T + '/6 (' + (p2T < 3 ? 'negative screen' : 'positive screen') + ')');
+  if (p9T !== null) moodParts.push('PHQ-9 of ' + p9T + '/27 (' + (p9T <= 4 ? 'minimal' : p9T <= 9 ? 'mild' : p9T <= 14 ? 'moderate' : p9T <= 19 ? 'moderately severe' : 'severe') + ' depression)');
+  if (moodParts.length) sentences.push('Mood and depression screening demonstrated ' + moodParts.join(', ') + '.');
+  if (p9Done && SC.p9[8] >= 1) sentences.push('Note: PHQ-9 item 9 (suicidal ideation) was positive — direct safety assessment is warranted.');
+
+  // Frailty
+  if (frT !== null) {
+    const frLabel = frT === 0 ? 'robust' : frT <= 2 ? 'pre-frail' : 'frail';
+    const frComps = ['wl','ex','grip','slow','pa'];
+    const frLabels = {wl:'weight loss',ex:'exhaustion',grip:'weakness',slow:'slowness',pa:'low physical activity'};
+    const posComps = frComps.filter(k => SC.fr[k] === 1).map(k => frLabels[k]);
+    sentences.push('Hopkins Frailty Assessment (Fried phenotype) classified this patient as ' + frLabel + ' (' + frT + '/5 criteria)' + (posComps.length ? ', with positive components including ' + posComps.join(', ') : '') + '.');
+  }
+
+  // Functional
+  const funcParts = [];
+  if (katzT !== null) funcParts.push('Katz ADL score of ' + katzT + '/6 (' + (katzT === 6 ? 'fully independent' : katzT >= 4 ? 'mildly dependent' : katzT >= 2 ? 'moderately dependent' : 'severely dependent') + ')');
+  if (lawtonT !== null) funcParts.push('Lawton IADL score of ' + lawtonT + '/8 (' + (lawtonT === 8 ? 'fully independent' : lawtonT >= 6 ? 'mildly dependent' : lawtonT >= 3 ? 'moderately dependent' : 'severely dependent') + ')');
+  if (funcParts.length) sentences.push('Functional status evaluation demonstrated a ' + funcParts.join(' and a ') + '.');
+
+  if (mnaT !== null) sentences.push('Nutritional screening with the MNA-SF yielded a score of ' + mnaT + '/14 (' + (mnaT >= 12 ? 'normal nutritional status' : mnaT >= 8 ? 'at risk of malnutrition' : 'malnourished') + ').');
+
+  // Closing impression
+  const concerns = [];
+  if (sppbT !== null && sppbT < 7) concerns.push('significant physical performance limitations');
+  if (mcT !== null && mcT <= 2) concerns.push('a positive cognitive screen requiring further workup');
+  if (mocaT !== null && mocaT < 21) concerns.push('moderate-to-severe cognitive impairment');
+  if (frT !== null && frT >= 3) concerns.push('frailty');
+  if ((gdsT !== null && gdsT >= 5) || (p9T !== null && p9T >= 10)) concerns.push('clinically significant depression');
+
+  const mmseIdsN=['mmse-ot','mmse-op','mmse-reg','mmse-att','mmse-rec','mmse-nam','mmse-rep','mmse-cmd','mmse-read','mmse-writ','mmse-draw'];
+  const mmseValsN=mmseIdsN.map(id=>{const v=document.getElementById(id)?.value;return v===''||!v?null:parseInt(v);});
+  if(!mmseValsN.some(v=>v===null)){const mmseT=mmseValsN.reduce((a,b)=>a+b,0);if(mmseT<18)concerns.push('significant cognitive impairment (MMSE '+mmseT+'/30)');}
+  if (mnaT !== null && mnaT < 8) concerns.push('malnutrition');
+  if (lawtonT !== null && lawtonT < 6) concerns.push('IADL impairment');
+  if (concerns.length > 0) {
+    sentences.push('Overall, this assessment identifies ' + concerns.join(', ') + ', warranting a multidisciplinary care plan and close follow-up.');
+  } else if (sentences.length > 1) {
+    sentences.push('Overall, this assessment does not identify major geriatric syndromes at this time. Continued preventive care and annual reassessment are recommended.');
+  }
+
+  const narrative = sentences.join(' ');
+  document.getElementById('narrative-para').textContent = narrative;
+
+  // ── structured note ──
+  const lines = [];
+  lines.push('GERIATRIC ASSESSMENT NOTE');
+  lines.push('═'.repeat(40));
+  lines.push('Patient: This is a ' + (age || 'age not recorded') + ' ' + (sex || 'sex not recorded') + (PT.bmi ? ', BMI ' + PT.bmi.toFixed(1) : '') + '.');
+  lines.push('');
+  lines.push('PHYSICAL PERFORMANCE');
+  lines.push('─'.repeat(30));
+  if (sppbDone) lines.push('SPPB: ' + sppbT + '/12 (balance ' + bal + '/4, gait ' + gait + '/4, chair stands ' + chair + '/4)');
+  if (SC.tug) lines.push('TUG: ' + SC.tug.toFixed(1) + ' s — ' + (SC.tug < 10 ? 'normal' : SC.tug < 20 ? 'borderline / increased fall risk' : 'HIGH fall risk'));
+  if (gripBest) lines.push('Grip strength: ' + gripBest.toFixed(1) + ' kg' + (gripCut ? ' — Fried cutoff ≤' + gripCut + ' kg → ' + (gripBest <= gripCut ? 'POSITIVE (weak)' : 'normal') : ''));
+  lines.push('');
+  lines.push('COGNITIVE ASSESSMENT');
+  lines.push('─'.repeat(30));
+  if (mcDone) lines.push('Mini-Cog: ' + mcT + '/5 — ' + (mcT <= 2 ? 'POSITIVE screen' : 'negative screen'));
+  if (mocaDone) lines.push('MoCA: ' + mocaT + '/30 — ' + (mocaT >= 26 ? 'normal' : mocaT >= 21 ? 'mild CI' : mocaT >= 11 ? 'moderate impairment' : 'severe impairment'));
+  if (SC.cam.every(v=>v!==null)) { const p=SC.cam[0]===1&&SC.cam[1]===1&&(SC.cam[2]===1||SC.cam[3]===1); lines.push('CAM: '+(p?'POSITIVE — delirium likely':'Negative — delirium unlikely')); }
+  const mmseIds2=['mmse-ot','mmse-op','mmse-reg','mmse-att','mmse-rec','mmse-nam','mmse-rep','mmse-cmd','mmse-read','mmse-writ','mmse-draw'];
+  const mmseV=mmseIds2.map(id=>{const v=document.getElementById(id)?.value;return v===''||!v?null:parseInt(v);});
+  if(!mmseV.some(v=>v===null)){const t=mmseV.reduce((a,b)=>a+b,0);lines.push('MMSE: '+t+'/30 — '+(t>=24?'normal':t>=18?'mild impairment':t>=12?'moderate impairment':'severe impairment'));}
+  lines.push('');
+  lines.push('MOOD / DEPRESSION');
+  lines.push('─'.repeat(30));
+  if (gdsT !== null) lines.push('GDS-15: ' + gdsT + '/15 — ' + (gdsT<=4?'normal':gdsT<=8?'mild depression probable':gdsT<=11?'moderate depression':'severe depression'));
+  if (p2Done) lines.push('PHQ-2: ' + p2T + '/6 — ' + (p2T<3?'negative screen':'POSITIVE screen'));
+  if (p9Done) { lines.push('PHQ-9: ' + p9T + '/27 — ' + (p9T<=4?'minimal':p9T<=9?'mild':p9T<=14?'moderate':p9T<=19?'moderately severe':'severe') + ' depression'); if (SC.p9[8]>=1) lines.push('  *** PHQ-9 item 9 (SI) POSITIVE — safety assessment required ***'); }
+  lines.push('');
+  lines.push('FRAILTY ASSESSMENT');
+  lines.push('─'.repeat(30));
+  if (frDone) {
+    lines.push('Hopkins Frailty (Fried): ' + frT + '/5 — ' + (frT===0?'ROBUST':frT<=2?'PRE-FRAIL':'FRAIL'));
+    const pos = ['wl','ex','grip','slow','pa'].filter(k => SC.fr[k]===1);
+    const lbls = {wl:'Weight loss',ex:'Exhaustion',grip:'Weakness',slow:'Slowness',pa:'Low activity'};
+    if (pos.length) lines.push('  Positive: ' + pos.map(k=>lbls[k]).join(', '));
+  }
+  lines.push('');
+  lines.push('FUNCTIONAL STATUS');
+  lines.push('─'.repeat(30));
+  if (katzDone) {
+    lines.push('Katz ADL: ' + katzT + '/6 — ' + (katzT===6?'fully independent':katzT>=4?'mild dependence':katzT>=2?'moderate dependence':'severe dependence'));
+    const kdeps = KATZ_ITEMS.filter((_,i)=>SC.katz[i]===0).map(item=>item.label);
+    if (kdeps.length) lines.push('  Dependent in: ' + kdeps.join(', '));
+  }
+  if (lawtonDone) {
+    lines.push('Lawton IADL: ' + lawtonT + '/8 — ' + (lawtonT===8?'fully independent':lawtonT>=6?'mild dependence':lawtonT>=3?'moderate dependence':'severe dependence'));
+    const ldeps = LAWTON_ITEMS.filter((_,i)=>SC.lawton[i]===0).map(item=>item.label);
+    if (ldeps.length) lines.push('  Needs assistance with: ' + ldeps.join(', '));
+  }
+  lines.push('');
+  lines.push('NUTRITIONAL ASSESSMENT');
+  lines.push('─'.repeat(30));
+  if (mnaDone) lines.push('MNA-SF: ' + mnaT + '/14 — ' + (mnaT>=12?'normal nutritional status':mnaT>=8?'at risk of malnutrition':'MALNOURISHED'));
+  lines.push('');
+  lines.push('CLINICAL IMPRESSION');
+  lines.push('─'.repeat(30));
+  lines.push(narrative);
+  lines.push('');
+  lines.push('─'.repeat(40));
+  lines.push('Date: ' + new Date().toLocaleDateString());
+  noteText = lines.join('\n');
+  document.getElementById('note-text').textContent = noteText;
+  document.getElementById('note-output').style.display = 'block';
+}
+
+function copyNote() {
+  navigator.clipboard.writeText(noteText).then(() => {
+    const btn = document.querySelector('#note-output .action-btn.success');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy to clipboard', 2000);
+  }).catch(() => alert('Please select the note text and copy manually.'));
+}
+function shareNote() {
+  if (navigator.share) {
+    navigator.share({ title: 'Geriatric Assessment', text: noteText });
+  } else {
+    copyNote();
+  }
+}
+function clearAll() {
+  if (!confirm('Clear all assessment data?')) return;
+  location.reload();
+}
+
+// ── PWA INSTALL ────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+document.getElementById('install-btn').addEventListener('click', () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('install-banner').style.display = 'none';
+    });
+  }
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────
+
+// ── BEERS CRITERIA DATABASE (2023 AGS) ─────────────────────────────────
+const BEERS_DB = [
+  {name:'diphenhydramine',brands:['Benadryl','ZzzQuil','Unisom','Nytol'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Highly anticholinergic; increased risk of confusion, dry mouth, constipation, urinary retention, and falls. Avoid as hypnotic, antiemetic, or for allergies.',quality:'Moderate',strength:'Strong'},
+  {name:'hydroxyzine',brands:['Vistaril','Atarax'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Highly anticholinergic; sedating. Increased risk of confusion and falls.',quality:'Moderate',strength:'Strong'},
+  {name:'chlorpheniramine',brands:['Chlor-Trimeton','Aller-Chlor'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Anticholinergic. Avoid in older adults.',quality:'Moderate',strength:'Strong'},
+  {name:'meclizine',brands:['Antivert','Bonine'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Anticholinergic; increased confusion and sedation risk.',quality:'Moderate',strength:'Strong'},
+  {name:'promethazine',brands:['Phenergan'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Highly anticholinergic; risk of extrapyramidal symptoms and confusion.',quality:'Moderate',strength:'Strong'},
+  {name:'doxylamine',brands:['Unisom SleepTabs','Nyquil'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Highly anticholinergic; increased risk of confusion and falls.',quality:'Moderate',strength:'Strong'},
+  {name:'cyproheptadine',brands:['Periactin'],cat:'Anticholinergics — Antihistamines',rec:'Avoid',rationale:'Anticholinergic; sedating.',quality:'Moderate',strength:'Strong'},
+  {name:'benztropine',brands:['Cogentin'],cat:'Anticholinergics — Antiparkinson',rec:'Avoid',rationale:'Not recommended for EPS prevention in older adults. More tolerable alternatives available.',quality:'Moderate',strength:'Strong'},
+  {name:'trihexyphenidyl',brands:['Artane'],cat:'Anticholinergics — Antiparkinson',rec:'Avoid',rationale:'Highly anticholinergic; delirium, constipation, urinary retention.',quality:'Moderate',strength:'Strong'},
+  {name:'dicyclomine',brands:['Bentyl'],cat:'Anticholinergics — Antispasmodics',rec:'Avoid',rationale:'Highly anticholinergic, uncertain effectiveness.',quality:'Moderate',strength:'Strong'},
+  {name:'hyoscyamine',brands:['Levsin','Levbid','NuLev'],cat:'Anticholinergics — Antispasmodics',rec:'Avoid',rationale:'Highly anticholinergic; uncertain effectiveness.',quality:'Moderate',strength:'Strong'},
+  {name:'scopolamine',brands:['Transderm Scop'],cat:'Anticholinergics — Antispasmodics',rec:'Avoid except short-term antiemetic',rationale:'Highly anticholinergic.',quality:'Moderate',strength:'Strong'},
+  {name:'oxybutynin',brands:['Ditropan','Oxytrol','Gelnique'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Highly anticholinergic; poorly tolerated. Confusion, dry mouth, constipation. Prefer mirabegron.',quality:'High',strength:'Strong'},
+  {name:'tolterodine',brands:['Detrol','Detrol LA'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Anticholinergic. Use only if other agents fail. Caution in cognitive impairment.',quality:'Moderate',strength:'Strong'},
+  {name:'solifenacin',brands:['VESIcare'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Anticholinergic. Prefer mirabegron.',quality:'Moderate',strength:'Strong'},
+  {name:'darifenacin',brands:['Enablex'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Anticholinergic. Avoid if possible.',quality:'Moderate',strength:'Strong'},
+  {name:'fesoterodine',brands:['Toviaz'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Anticholinergic. Prefer mirabegron (Myrbetriq).',quality:'Moderate',strength:'Strong'},
+  {name:'trospium',brands:['Sanctura'],cat:'Anticholinergics — Bladder (OAB)',rec:'Avoid',rationale:'Anticholinergic.',quality:'Moderate',strength:'Strong'},
+  {name:'mirabegron',brands:['Myrbetriq'],cat:'Bladder (OAB) — Beta-3 Agonist',rec:'Preferred over anticholinergics for OAB',rationale:'Not on Beers list. Preferred agent for overactive bladder in older adults due to lower anticholinergic burden.',quality:'N/A',strength:'Preferred alternative'},
+  {name:'amitriptyline',brands:['Elavil'],cat:'Anticholinergics — TCAs',rec:'Avoid',rationale:'Highly anticholinergic and sedating. Avoid for depression.',quality:'High',strength:'Strong'},
+  {name:'nortriptyline',brands:['Pamelor','Aventyl'],cat:'Anticholinergics — TCAs',rec:'Avoid',rationale:'Anticholinergic and sedating. Better options for depression.',quality:'Moderate',strength:'Strong'},
+  {name:'imipramine',brands:['Tofranil'],cat:'Anticholinergics — TCAs',rec:'Avoid',rationale:'Highly anticholinergic, sedating, orthostatic hypotension.',quality:'High',strength:'Strong'},
+  {name:'doxepin',brands:['Sinequan','Silenor'],cat:'Anticholinergics — TCAs',rec:'Avoid if >6 mg/day',rationale:'Doses >6 mg/day highly anticholinergic. Doxepin ≤6 mg/day acceptable for insomnia.',quality:'Moderate',strength:'Strong'},
+  {name:'clomipramine',brands:['Anafranil'],cat:'Anticholinergics — TCAs',rec:'Avoid',rationale:'Highly anticholinergic. Avoid in older adults.',quality:'Moderate',strength:'Strong'},
+  {name:'paroxetine',brands:['Paxil','Paxil CR','Brisdelle'],cat:'Anticholinergics — SSRIs',rec:'Avoid',rationale:'Most anticholinergic SSRI; sedating. Other SSRIs preferred.',quality:'Moderate',strength:'Strong'},
+  {name:'haloperidol',brands:['Haldol'],cat:'CNS — Antipsychotics',rec:'Avoid except specific indications',rationale:'Increased risk of stroke and mortality in dementia. Use only for schizophrenia, bipolar, or chemotherapy nausea if no alternatives.',quality:'Moderate',strength:'Strong'},
+  {name:'quetiapine',brands:['Seroquel','Seroquel XR'],cat:'CNS — Antipsychotics',rec:'Avoid except Parkinson\'s/Lewy body dementia',rationale:'Increased cerebrovascular events and mortality in dementia. May be acceptable in Parkinson\'s psychosis.',quality:'Moderate',strength:'Strong'},
+  {name:'risperidone',brands:['Risperdal'],cat:'CNS — Antipsychotics',rec:'Avoid',rationale:'Increased stroke and mortality in dementia. Avoid for behavioral problems.',quality:'Moderate',strength:'Strong'},
+  {name:'olanzapine',brands:['Zyprexa','Zyprexa Zydis'],cat:'CNS — Antipsychotics',rec:'Avoid',rationale:'Anticholinergic; increased mortality in dementia; high metabolic risk.',quality:'Moderate',strength:'Strong'},
+  {name:'aripiprazole',brands:['Abilify','Abilify Maintena'],cat:'CNS — Antipsychotics',rec:'Avoid in dementia',rationale:'Increased mortality in dementia.',quality:'Moderate',strength:'Strong'},
+  {name:'clozapine',brands:['Clozaril','FazaClo'],cat:'CNS — Antipsychotics',rec:'Avoid except Parkinson\'s psychosis',rationale:'Highest anticholinergic burden; agranulocytosis risk.',quality:'Moderate',strength:'Strong'},
+  {name:'thioridazine',brands:['Mellaril'],cat:'CNS — Antipsychotics',rec:'Avoid',rationale:'Highly anticholinergic; QTc prolongation; EPS.',quality:'Moderate',strength:'Strong'},
+  {name:'chlorpromazine',brands:['Thorazine'],cat:'CNS — Antipsychotics',rec:'Avoid',rationale:'Highly anticholinergic; orthostatic hypotension; QTc prolongation.',quality:'Moderate',strength:'Strong'},
+  {name:'brexpiprazole',brands:['Rexulti'],cat:'CNS — Antipsychotics',rec:'Avoid in dementia',rationale:'Increased mortality in older adults with dementia-related psychosis.',quality:'Moderate',strength:'Strong'},
+  {name:'alprazolam',brands:['Xanax','Xanax XR','Niravam'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Increased sensitivity in older adults. Risk of cognitive impairment, delirium, falls, MVAs.',quality:'Moderate',strength:'Strong'},
+  {name:'diazepam',brands:['Valium','Diastat'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Long half-life; falls, cognitive impairment, paradoxical CNS stimulation.',quality:'Moderate',strength:'Strong'},
+  {name:'lorazepam',brands:['Ativan'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Cognitive impairment, delirium, falls, and fractures.',quality:'Moderate',strength:'Strong'},
+  {name:'clonazepam',brands:['Klonopin'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Cognitive impairment, falls, physical dependence.',quality:'Moderate',strength:'Strong'},
+  {name:'temazepam',brands:['Restoril'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Falls and cognitive impairment.',quality:'Moderate',strength:'Strong'},
+  {name:'triazolam',brands:['Halcion'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Cognitive impairment, delirium, falls.',quality:'Moderate',strength:'Strong'},
+  {name:'flurazepam',brands:['Dalmane'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Very long half-life (up to 4 days). Excessive sedation, falls.',quality:'High',strength:'Strong'},
+  {name:'oxazepam',brands:['Serax'],cat:'CNS — Benzodiazepines',rec:'Avoid',rationale:'Still increases cognitive impairment and falls despite shorter half-life.',quality:'Moderate',strength:'Strong'},
+  {name:'clobazam',brands:['Onfi','Sympazan'],cat:'CNS — Benzodiazepines',rec:'Avoid except for epilepsy',rationale:'Benzodiazepine risks; use only if clearly needed for seizure management.',quality:'Moderate',strength:'Strong'},
+  {name:'zolpidem',brands:['Ambien','Ambien CR','Edluar','Intermezzo'],cat:'CNS — Non-benzo Hypnotics (Z-drugs)',rec:'Avoid',rationale:'ED visits, hospitalizations, MVAs, falls similar to benzodiazepines.',quality:'Moderate',strength:'Strong'},
+  {name:'eszopiclone',brands:['Lunesta'],cat:'CNS — Non-benzo Hypnotics (Z-drugs)',rec:'Avoid',rationale:'Delirium, falls, fractures, and accidents.',quality:'Moderate',strength:'Strong'},
+  {name:'zaleplon',brands:['Sonata'],cat:'CNS — Non-benzo Hypnotics (Z-drugs)',rec:'Avoid',rationale:'Same risks as other z-drugs.',quality:'Moderate',strength:'Strong'},
+  {name:'ibuprofen',brands:['Advil','Motrin','Midol'],cat:'Pain — NSAIDs (non-selective)',rec:'Avoid unless alternatives not effective',rationale:'GI bleeding, acute kidney injury, fluid retention, worsening heart failure. If used, add PPI.',quality:'Moderate',strength:'Strong'},
+  {name:'naproxen',brands:['Aleve','Naprosyn','Anaprox'],cat:'Pain — NSAIDs (non-selective)',rec:'Avoid unless alternatives not effective',rationale:'GI, renal, CV risks. Add PPI if used.',quality:'Moderate',strength:'Strong'},
+  {name:'meloxicam',brands:['Mobic','Vivlodex'],cat:'Pain — NSAIDs',rec:'Avoid unless alternatives not effective',rationale:'GI, renal, CV risks despite some COX-2 selectivity.',quality:'Moderate',strength:'Strong'},
+  {name:'diclofenac',brands:['Voltaren','Cambia'],cat:'Pain — NSAIDs (non-selective)',rec:'Avoid oral; topical acceptable',rationale:'GI and renal risks. Topical Voltaren Gel preferred.',quality:'Moderate',strength:'Strong'},
+  {name:'indomethacin',brands:['Indocin'],cat:'Pain — NSAIDs',rec:'Avoid',rationale:'Highest CNS adverse effect risk of all NSAIDs; confusion, delirium.',quality:'Moderate',strength:'Strong'},
+  {name:'ketorolac',brands:['Toradol'],cat:'Pain — NSAIDs',rec:'Avoid',rationale:'High GI and renal toxicity. Avoid in older adults.',quality:'Moderate',strength:'Strong'},
+  {name:'piroxicam',brands:['Feldene'],cat:'Pain — NSAIDs (non-selective)',rec:'Avoid',rationale:'Higher GI toxicity; long half-life increases accumulation.',quality:'Moderate',strength:'Strong'},
+  {name:'celecoxib',brands:['Celebrex'],cat:'Pain — NSAIDs (COX-2 selective)',rec:'Use with caution',rationale:'Less GI toxicity than non-selective NSAIDs with PPI, but same renal and CV risks.',quality:'Moderate',strength:'Moderate'},
+  {name:'aspirin',brands:['Bayer','Ecotrin','Bufferin'],cat:'Pain — Salicylates',rec:'Avoid >325 mg/day for pain; low-dose (75-100 mg) acceptable for CV prevention',rationale:'GI bleeding risk at higher doses.',quality:'Moderate',strength:'Strong'},
+  {name:'meperidine',brands:['Demerol'],cat:'Pain — Opioids',rec:'Avoid',rationale:'Active metabolite (normeperidine) accumulates; causes CNS toxicity including seizures.',quality:'Moderate',strength:'Strong'},
+  {name:'pentazocine',brands:['Talwin'],cat:'Pain — Opioids',rec:'Avoid',rationale:'CNS adverse effects including confusion and hallucinations more than other opioids.',quality:'Moderate',strength:'Strong'},
+  {name:'tramadol',brands:['Ultram','Ultram ER','ConZip'],cat:'Pain — Opioids',rec:'Use with caution',rationale:'Seizure risk at higher doses; lowers seizure threshold; serotonin syndrome risk; falls.',quality:'Moderate',strength:'Moderate'},
+  {name:'cyclobenzaprine',brands:['Flexeril','Amrix','Fexmid'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Anticholinergic adverse effects, sedation, increased fracture risk. Questionable efficacy.',quality:'Moderate',strength:'Strong'},
+  {name:'carisoprodol',brands:['Soma'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Anticholinergic; poorly tolerated; abuse potential.',quality:'Moderate',strength:'Strong'},
+  {name:'methocarbamol',brands:['Robaxin'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Sedation; anticholinergic effects.',quality:'Moderate',strength:'Strong'},
+  {name:'metaxalone',brands:['Skelaxin'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Sedation; CNS effects.',quality:'Moderate',strength:'Strong'},
+  {name:'orphenadrine',brands:['Norflex'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Strong anticholinergic; very sedating.',quality:'Moderate',strength:'Strong'},
+  {name:'chlorzoxazone',brands:['Parafon Forte'],cat:'Musculoskeletal — Muscle Relaxants',rec:'Avoid',rationale:'Poorly tolerated in older adults.',quality:'Moderate',strength:'Strong'},
+  {name:'digoxin',brands:['Lanoxin'],cat:'Cardiovascular — Cardiac Glycosides',rec:'Avoid >0.125 mg/day; avoid as first-line for A-fib',rationale:'Narrow therapeutic window; increased toxicity at doses needed in older adults. Rate control preferred with beta-blockers or CCBs for A-fib.',quality:'Moderate',strength:'Strong'},
+  {name:'amiodarone',brands:['Cordarone','Pacerone'],cat:'Cardiovascular — Antiarrhythmics',rec:'Avoid as first-line for A-fib',rationale:'Toxicities: thyroid, pulmonary, hepatic, skin, ocular, peripheral neuropathy. May be reasonable if other options fail.',quality:'High',strength:'Strong'},
+  {name:'nifedipine',brands:['Procardia','Adalat'],cat:'Cardiovascular — Calcium Channel Blockers',rec:'Avoid immediate-release only',rationale:'Immediate-release: hypotension, myocardial ischemia. Extended-release acceptable.',quality:'High',strength:'Strong'},
+  {name:'doxazosin',brands:['Cardura','Cardura XL'],cat:'Cardiovascular — Alpha-1 Blockers',rec:'Avoid as antihypertensive',rationale:'Orthostatic hypotension and falls. Acceptable for BPH.',quality:'Moderate',strength:'Strong'},
+  {name:'prazosin',brands:['Minipress'],cat:'Cardiovascular — Alpha-1 Blockers',rec:'Avoid as antihypertensive',rationale:'Orthostatic hypotension and falls.',quality:'Moderate',strength:'Strong'},
+  {name:'terazosin',brands:['Hytrin'],cat:'Cardiovascular — Alpha-1 Blockers',rec:'Avoid as antihypertensive',rationale:'Orthostatic hypotension and falls. Use only for BPH.',quality:'Moderate',strength:'Strong'},
+  {name:'clonidine',brands:['Catapres','Kapvay'],cat:'Cardiovascular — Central Alpha Agonists',rec:'Avoid as first-line antihypertensive',rationale:'CNS adverse effects; bradycardia; orthostatic hypotension.',quality:'Low',strength:'Strong'},
+  {name:'methyldopa',brands:['Aldomet'],cat:'Cardiovascular — Central Alpha Agonists',rec:'Avoid',rationale:'CNS adverse effects; may exacerbate depression.',quality:'Low',strength:'Strong'},
+  {name:'reserpine',brands:['Serpalan'],cat:'Cardiovascular — Central Alpha Agonists',rec:'Avoid',rationale:'Depression, sedation, orthostatic hypotension, bradycardia.',quality:'Low',strength:'Strong'},
+  {name:'disopyramide',brands:['Norpace'],cat:'Cardiovascular — Antiarrhythmics',rec:'Avoid',rationale:'Most negatively inotropic antiarrhythmic; may cause HF; strongly anticholinergic.',quality:'Low',strength:'Strong'},
+  {name:'dronedarone',brands:['Multaq'],cat:'Cardiovascular — Antiarrhythmics',rec:'Avoid in permanent A-fib',rationale:'Worse outcomes in permanent A-fib; hepatotoxicity.',quality:'Moderate',strength:'Strong'},
+  {name:'sotalol',brands:['Betapace','Sorine'],cat:'Cardiovascular — Antiarrhythmics',rec:'Use with caution',rationale:'Risk of QTc prolongation and torsades de pointes. Benefit may not outweigh risk.',quality:'Moderate',strength:'Strong'},
+  {name:'metoclopramide',brands:['Reglan','Metozolv ODT'],cat:'GI — Prokinetics/Antiemetics',rec:'Avoid unless for gastroparesis',rationale:'Can cause tardive dyskinesia which may be irreversible with chronic use.',quality:'Moderate',strength:'Strong'},
+  {name:'mineral oil',brands:['Fleet Mineral Oil'],cat:'GI — Laxatives',rec:'Avoid oral form',rationale:'Aspiration risk; impairs fat-soluble vitamin absorption.',quality:'Moderate',strength:'Strong'},
+  {name:'trimethobenzamide',brands:['Tigan'],cat:'GI — Antiemetics',rec:'Avoid',rationale:'Least effective antiemetic; extrapyramidal symptoms.',quality:'Moderate',strength:'Strong'},
+  {name:'omeprazole',brands:['Prilosec','Prilosec OTC'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'C. difficile, bone loss, fractures, hypomagnesemia with long-term use. Reassess periodically.',quality:'Moderate',strength:'Strong'},
+  {name:'pantoprazole',brands:['Protonix'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'C. diff, bone loss, hypomagnesemia with long-term use.',quality:'Moderate',strength:'Strong'},
+  {name:'esomeprazole',brands:['Nexium','Nexium 24HR'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'C. diff, fractures, hypomagnesemia.',quality:'Moderate',strength:'Strong'},
+  {name:'lansoprazole',brands:['Prevacid'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'Long-term PPI risks: C. diff, bone loss, hypomagnesemia.',quality:'Moderate',strength:'Strong'},
+  {name:'rabeprazole',brands:['Aciphex'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'C. diff, bone loss, hypomagnesemia.',quality:'Moderate',strength:'Strong'},
+  {name:'dexlansoprazole',brands:['Dexilant'],cat:'GI — Proton Pump Inhibitors',rec:'Avoid scheduled use >8 weeks',rationale:'Long-term PPI risks.',quality:'Moderate',strength:'Strong'},
+  {name:'glyburide',brands:['DiaBeta','Micronase','Glynase'],cat:'Endocrine — Sulfonylureas',rec:'Avoid',rationale:'Higher risk of severe prolonged hypoglycemia than other sulfonylureas. Prefer glipizide or glimepiride.',quality:'High',strength:'Strong'},
+  {name:'chlorpropamide',brands:['Diabinese'],cat:'Endocrine — Sulfonylureas',rec:'Avoid',rationale:'Prolonged hypoglycemia; causes SIADH.',quality:'High',strength:'Strong'},
+  {name:'glipizide',brands:['Glucotrol','Glucotrol XL'],cat:'Endocrine — Sulfonylureas',rec:'Use with caution',rationale:'Hypoglycemia risk. If sulfonylurea needed, preferred over glyburide.',quality:'Moderate',strength:'Strong'},
+  {name:'glimepiride',brands:['Amaryl'],cat:'Endocrine — Sulfonylureas',rec:'Use with caution',rationale:'Hypoglycemia risk. Preferred over glyburide if sulfonylurea needed.',quality:'Moderate',strength:'Moderate'},
+  {name:'megestrol',brands:['Megace','Megace ES'],cat:'Endocrine — Progestins',rec:'Avoid',rationale:'Minimal effect on weight; thrombotic events; possibly increases mortality.',quality:'Moderate',strength:'Strong'},
+  {name:'desmopressin',brands:['DDAVP','Noctiva','Nocdurna','Stimate'],cat:'Endocrine — Antidiuretic Hormones',rec:'Avoid for nocturia',rationale:'High risk of hyponatremia; safer alternatives available.',quality:'Moderate',strength:'Strong'},
+  {name:'testosterone',brands:['AndroGel','Testim','Axiron','Fortesta','Androderm'],cat:'Endocrine — Androgens',rec:'Avoid unless confirmed hypogonadism with symptoms',rationale:'Cardiac problems; worsened heart failure; prostatic hypertrophy.',quality:'Moderate',strength:'Weak'},
+  {name:'nitrofurantoin',brands:['Macrobid','Macrodantin'],cat:'Anti-infective',rec:'Avoid if eGFR <30; use with caution if eGFR 30-44',rationale:'Pulmonary and hepatic toxicity with long-term use. Inadequate urine concentrations at low GFR.',quality:'Moderate',strength:'Strong'},
+  {name:'insulin sliding scale',brands:['Regular insulin','Humalog','NovoLog','Apidra'],cat:'Endocrine — Insulin',rec:'Avoid sliding scale alone without basal insulin',rationale:'Higher risk of hypoglycemia without demonstrated improvement in glycemic control vs basal insulin.',quality:'Moderate',strength:'Strong'},
+];
+
+function searchBeers(query) {
+  const out = document.getElementById('beers-results');
+  const q = (query || '').trim().toLowerCase();
+  if (!q) { out.innerHTML = '<div style="color:var(--gray-500);font-size:13px;padding:8px 0">Type a medication name to search…</div>'; return; }
+  const hits = BEERS_DB.filter(d =>
+    d.name.toLowerCase().includes(q) ||
+    d.brands.some(b => b.toLowerCase().includes(q)) ||
+    d.cat.toLowerCase().includes(q)
+  );
+  if (!hits.length) {
+    out.innerHTML = `<div class="result-card ok" style="margin-top:4px"><div class="r-title">Not found on 2023 Beers List</div><div class="r-body">"${query.trim()}" does not appear in the 2023 AGS Beers Criteria. This does not guarantee safety — always review full clinical context and renal function.</div></div>`;
+    return;
+  }
+  out.innerHTML = hits.map(d => {
+    const isAvoid = d.rec.toLowerCase().startsWith('avoid');
+    const isCaution = d.rec.toLowerCase().includes('caution') || d.rec.toLowerCase().includes('preferred');
+    const cls = isAvoid ? 'bad' : 'warn';
+    const brands = d.brands.length ? `<div style="font-size:11px;margin-top:4px;opacity:0.85">Brand names: ${d.brands.join(', ')}</div>` : '';
+    return `<div class="result-card ${cls}" style="margin-bottom:10px">
+      <div class="r-title" style="font-size:14px">${d.name.charAt(0).toUpperCase()+d.name.slice(1)}</div>
+      <div style="font-size:12px;font-weight:600;margin:3px 0">${d.rec}</div>
+      ${brands}
+      <div style="font-size:11px;margin:6px 0 2px;font-weight:600;opacity:0.75;text-transform:uppercase;letter-spacing:0.3px">${d.cat}</div>
+      <div class="r-body" style="margin-top:4px">${d.rationale}</div>
+      <div style="font-size:11px;margin-top:6px;opacity:0.7">Evidence: ${d.quality} · Recommendation strength: ${d.strength}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── SHARE SHEET ────────────────────────────────────────────────────────
+function shareNote() {
+  buildNote();
+  if (!noteText) return;
+  if (navigator.share) {
+    navigator.share({
+      title: 'Geriatric Assessment — ' + new Date().toLocaleDateString(),
+      text: noteText
+    }).catch(() => fallbackCopy());
+  } else {
+    fallbackCopy();
+  }
+}
+function fallbackCopy() {
+  navigator.clipboard.writeText(noteText).then(() => {
+    alert('Copied to clipboard. Paste into Epic, notes, or email.');
+  }).catch(() => {
+    alert('Please select the note text and copy manually.');
+  });
+}
+
+buildGDS();
+buildPHQ9();
+buildGripTable();
+buildKatz();
+buildLawton();
+initMNA();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js?v=20250516').catch(() => {});
+}
+</script>
+</body>
+</html>
