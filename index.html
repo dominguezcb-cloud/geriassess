@@ -2037,6 +2037,7 @@ function buildNote() {
   const mnaItems = [SC.mna.a, SC.mna.b, SC.mna.c, SC.mna.d, SC.mna.e, SC.mna.f];
   const mnaDone = !mnaItems.some(v => v === null);
   const mnaT = mnaDone ? mnaItems.reduce((a,b) => a+b, 0) : null;
+  const katzDone = !SC.katz.some(v => v === null);
   const katzT = katzDone ? SC.katz.reduce((a,b) => a+b, 0) : null;
   const lawtonDone = !SC.lawton.some(v => v === null);
   const lawtonT = lawtonDone ? SC.lawton.reduce((a,b) => a+b, 0) : null;
